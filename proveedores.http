@@ -1,0 +1,50 @@
+### Iniciar sesion
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "correo": "juanz@example.com",
+    "contraseña": "123456"
+}
+
+### Crear nuevo cliente
+POST http://localhost:3000/api/proveedores
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MDYzNzU3LCJleHAiOjE3NDgwNjczNTd9.CJQbWEk8b6YxarHcxlSlr94NKIzIftgmrww8T_D7Og4
+
+{
+  "razonSocial": "Suministros XY S.A.S.",
+  "nombreProveedor": "Juan Pérez",
+  "nit": "900123456-7",
+  "telefono": "3111234567",
+  "correo": "contacto@xyz.com",
+  "direccion": "Calle 123 #45-67, Bogotá",
+  "banco": "Bancolombia",
+  "numeroCuenta": "1234567890",
+  "tipoCuenta": "Corriente",
+  "categoriaSuministro": ["Tecnología", "Accesorios"],
+  "estado": "Activo",
+  "fechaRegistro": "2025-05-23"
+}
+
+
+### Obtener los clientes
+GET http://localhost:3000/api/proveedores
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MDYzNzU3LCJleHAiOjE3NDgwNjczNTd9.CJQbWEk8b6YxarHcxlSlr94NKIzIftgmrww8T_D7Og4
+
+
+### Actualizar los clientes
+PATCH http://localhost:3000/api/proveedores/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MDYzNzU3LCJleHAiOjE3NDgwNjczNTd9.CJQbWEk8b6YxarHcxlSlr94NKIzIftgmrww8T_D7Og4
+
+{
+    "banco" : "Caja Social"
+
+}
+
+### Eliminar un cliente
+DELETE  http://localhost:3000/api/proveedores/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MDYzNzU3LCJleHAiOjE3NDgwNjczNTd9.CJQbWEk8b6YxarHcxlSlr94NKIzIftgmrww8T_D7Og4

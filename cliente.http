@@ -1,0 +1,41 @@
+### Iniciar sesion
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "correo": "juanz@example.com",
+    "contraseña": "123456"
+}
+
+### Crear nuevo cliente
+POST http://localhost:3000/api/clientes
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MTA3MjMzLCJleHAiOjE3NDgxMTA4MzN9.5_1v7EiZcdFqyF9OXmQA3KlD-V0ZZizxSyeJqLvRPOw
+
+{
+  "nombreCliente": "Juan Pérez",
+  "telefono": "3111234567",
+  "correo": "contacto@xyz.com",
+  "direccion": "Torices"
+}
+
+
+### Obtener los clientes
+GET http://localhost:3000/api/clientes
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MTA3MjMzLCJleHAiOjE3NDgxMTA4MzN9.5_1v7EiZcdFqyF9OXmQA3KlD-V0ZZizxSyeJqLvRPOw
+
+
+### Actualizar los clientes
+PATCH http://localhost:3000/api/clientes/5
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MTA3MjMzLCJleHAiOjE3NDgxMTA4MzN9.5_1v7EiZcdFqyF9OXmQA3KlD-V0ZZizxSyeJqLvRPOw
+
+{
+    "direccion" : "Torices"
+}
+
+### Eliminar un cliente
+DELETE  http://localhost:3000/api/clientes/4
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvSWQiOjQsImNvcnJlbyI6Imp1YW56QGV4YW1wbGUuY29tIiwicHJpbWVyTm9tYnJlIjoiSnVhbiIsInNlZ3VuZG9Ob21icmUiOiJDYXJsb3MiLCJwcmltZXJBcGVsbGlkbyI6IlDDqXJleiIsInNlZ3VuZG9BcGVsbGlkbyI6IkfDs21leiIsInRlbGVmb25vIjoiMTIzNDU2Nzg5MCIsInJvbCI6InZlbmRlZG9yIiwiaWF0IjoxNzQ4MTA3MjMzLCJleHAiOjE3NDgxMTA4MzN9.5_1v7EiZcdFqyF9OXmQA3KlD-V0ZZizxSyeJqLvRPOw
