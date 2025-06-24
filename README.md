@@ -76,7 +76,7 @@ Inventario-Lumxis/
 │
 ├── 📁 uploads/             # Imágenes de productos
 ├── 📁 utils/               # Utilidades (JWT, helpers)
-├── 📄 app.js               # Servidor principal
+├── 📄 server.js               # Servidor principal
 ├── 📄 package.json
 └── 📄 README.md
 ```
