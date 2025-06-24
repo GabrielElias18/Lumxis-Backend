@@ -1,12 +1,24 @@
 const Producto = require('../models/productModel');
-const Categoria = require('../models/categoryModel'); // Asegúrate de importar el modelo de Categoría
+const Categoria = require('../models/categoryModel'); // Modelo de Categoría
 
-// Crear un nuevo producto con imágenes
+// ========================================================
+// ➕ Crear un nuevo producto con imágenes
+// ========================================================
 const createProduct = async (req, res) => {
   try {
-    const { nombre, descripcion, cantidadDisponible, precioCompra, precioVenta, categoriaNombre } = req.body;
-    const usuarioId = req.usuario.usuarioId; // Usuario autenticado
+    // 📥 Datos recibidos del cuerpo de la solicitud
+    const {
+      nombre,
+      descripcion,
+      cantidadDisponible,
+      precioCompra,
+      precioVenta,
+      categoriaNombre
+    } = req.body;
 
+    const usuarioId = req.usuario.usuarioId; // ID del usuario autenticado
+
+    // 🛡️ Validaciones básicas
     if (!usuarioId) {
       return res.status(400).json({ mensaje: 'Usuario no autenticado.' });
     }
@@ -15,7 +27,7 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ mensaje: 'El nombre de la categoría es obligatorio.' });
     }
 
-    // Buscar la categoría por su nombre y verificar que pertenece al usuario
+    // 🔍 Verificar que la categoría existe y pertenece al usuario
     const categoria = await Categoria.findOne({
       where: { nombre: categoriaNombre, usuarioid: usuarioId }
     });
@@ -24,19 +36,21 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ mensaje: 'La categoría no existe o no pertenece al usuario.' });
     }
 
-    // Manejo de imágenes (si se suben)
-    const imagenes = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
+    // 📸 Procesar imágenes subidas (si hay)
+    const imagenes = req.files
+      ? req.files.map(file => `/uploads/${file.filename}`)
+      : [];
 
-    // Crear el producto con categoriaid y categoria_nombre
+    // 🧱 Crear producto con categoría asociada
     const nuevoProducto = await Producto.create({
       nombre,
       descripcion,
       cantidadDisponible,
       precioCompra,
       precioVenta,
-      imagenes, // Guardamos las rutas de las imágenes
+      imagenes,
       categoriaNombre,
-      categoriaid: categoria.categoriaid, // Usamos el ID obtenido de la categoría
+      categoriaid: categoria.categoriaid,
       usuarioid: usuarioId
     });
 
@@ -44,40 +58,50 @@ const createProduct = async (req, res) => {
       mensaje: 'Producto creado exitosamente.',
       producto: nuevoProducto
     });
+
   } catch (error) {
     console.error('❌ Error al crear producto:', error);
     res.status(500).json({ mensaje: 'Error al crear el producto.', error: error.message });
   }
 };
 
-// Obtener todos los productos del usuario autenticado
+// ========================================================
+// 📄 Obtener todos los productos del usuario autenticado
+// ========================================================
 const getAllProducts = async (req, res) => {
   try {
     const usuarioid = req.usuario.usuarioId;
 
+    // 📥 Obtener productos de la base de datos
     const productos = await Producto.findAll({
       where: { usuarioid }
     });
 
-    // Convertir las rutas de imágenes a URLs accesibles
+    // 🌐 Agregar la URL completa a las imágenes
     const productosConImagenes = productos.map(producto => ({
       ...producto.toJSON(),
-      imagenes: producto.imagenes ? producto.imagenes.map(img => `http://localhost:3000${img}`) : []
+      imagenes: producto.imagenes
+        ? producto.imagenes.map(img => `http://localhost:3000${img}`)
+        : []
     }));
 
     res.status(200).json(productosConImagenes);
+
   } catch (error) {
     console.error('❌ Error al obtener productos:', error);
     res.status(500).json({ mensaje: 'Error al obtener los productos.', error: error.message });
   }
 };
 
-// Obtener un producto por ID
+// ========================================================
+// 🔍 Obtener un producto por su ID
+// ========================================================
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     const usuarioId = req.usuario.usuarioId;
 
+    // 🔍 Buscar producto por ID y usuario
     const producto = await Producto.findOne({
       where: { productoid: id, usuarioid: usuarioId }
     });
@@ -88,43 +112,58 @@ const getProductById = async (req, res) => {
 
     res.status(200).json({
       ...producto.toJSON(),
-      imagenes: producto.imagenes ? producto.imagenes.map(img => `http://localhost:3000${img}`) : []
+      imagenes: producto.imagenes
+        ? producto.imagenes.map(img => `http://localhost:3000${img}`)
+        : []
     });
+
   } catch (error) {
     console.error('❌ Error al obtener producto:', error);
     res.status(500).json({ mensaje: 'Error al obtener el producto.', error: error.message });
   }
 };
 
+// ========================================================
+// ✏️ Actualizar un producto existente
+// ========================================================
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, cantidadDisponible, precioCompra, precioVenta, categoriaid, categoria_nombre } = req.body;
+    const {
+      nombre,
+      descripcion,
+      cantidadDisponible,
+      precioCompra,
+      precioVenta,
+      categoriaid,
+      categoria_nombre
+    } = req.body;
+
     const usuarioid = req.usuario.usuarioId;
 
-    // Buscar el producto y verificar que pertenece al usuario
-    const producto = await Producto.findOne({ where: { productoid: id, usuarioid } });
+    // 🔍 Buscar el producto a editar
+    const producto = await Producto.findOne({
+      where: { productoid: id, usuarioid }
+    });
 
     if (!producto) {
       return res.status(404).json({ mensaje: 'Producto no encontrado o no pertenece al usuario.' });
     }
 
-    // Obtener el nombre de la categoría directamente de la base de datos si no se proporciona
+    // 📌 Obtener nombre de categoría si solo se pasa el ID
     let nombreCategoria = categoria_nombre;
-    
+
     if (!nombreCategoria && categoriaid) {
       const categoria = await Categoria.findByPk(categoriaid);
-      if (categoria) {
-        nombreCategoria = categoria.nombre;
-      }
+      if (categoria) nombreCategoria = categoria.nombre;
     }
 
-    // Manejo de imágenes: si se suben nuevas, reemplazar; si no, conservar las existentes
-    const nuevasImagenes = req.files && req.files.length > 0 
-      ? req.files.map(file => `/uploads/${file.filename}`) 
-      : producto.imagenes || []; 
+    // 📸 Si se subieron nuevas imágenes, reemplazar; si no, conservar existentes
+    const nuevasImagenes = req.files && req.files.length > 0
+      ? req.files.map(file => `/uploads/${file.filename}`)
+      : producto.imagenes || [];
 
-    // Actualizar los campos del producto
+    // ✏️ Actualizar producto
     await producto.update({
       nombre: nombre || producto.nombre,
       descripcion: descripcion || producto.descripcion,
@@ -132,28 +171,30 @@ const updateProduct = async (req, res) => {
       precioCompra: precioCompra !== undefined ? precioCompra : producto.precioCompra,
       precioVenta: precioVenta !== undefined ? precioVenta : producto.precioVenta,
       categoriaid: categoriaid || producto.categoriaid,
-      categoria_nombre: nombreCategoria, // Actualizar el nombre de la categoría
-      imagenes: nuevasImagenes // Asegurar que no se borren imágenes existentes
+      categoria_nombre: nombreCategoria,
+      imagenes: nuevasImagenes
     });
 
     res.status(200).json({
       mensaje: 'Producto actualizado exitosamente.',
       producto
     });
+
   } catch (error) {
     console.error('❌ Error al actualizar producto:', error);
     res.status(500).json({ mensaje: 'Error al actualizar el producto.', error: error.message });
   }
 };
 
-
-// Eliminar un producto
+// ========================================================
+// 🗑️ Eliminar un producto
+// ========================================================
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const usuarioid = req.usuario.usuarioId;
 
-    // Verificar que el producto existe y pertenece al usuario
+    // 🧹 Eliminar si pertenece al usuario
     const resultado = await Producto.destroy({
       where: { productoid: id, usuarioid }
     });
@@ -163,12 +204,16 @@ const deleteProduct = async (req, res) => {
     }
 
     res.status(200).json({ mensaje: 'Producto eliminado exitosamente.' });
+
   } catch (error) {
     console.error('❌ Error al eliminar producto:', error);
     res.status(500).json({ mensaje: 'Error al eliminar el producto.', error: error.message });
   }
 };
 
+// ========================================================
+// 📤 Exportar funciones
+// ========================================================
 module.exports = {
   createProduct,
   getAllProducts,

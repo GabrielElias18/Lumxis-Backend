@@ -1,13 +1,46 @@
-// routes/categoryRoutes.js
+// ======================================================
+// 📂 RUTAS PARA GESTIÓN DE CATEGORÍAS DE PRODUCTOS
+// ======================================================
+
 const express = require('express');
-const { createCategory, getCategoriesByUser, updateCategory , deleteCategory } = require('../controllers/categoryController');
+
+// Importamos las funciones del controlador de categorías
+const {
+  createCategory,
+  getCategoriesByUser,
+  updateCategory,
+  deleteCategory
+} = require('../controllers/categoryController');
+
+// Importamos middleware para proteger las rutas
 const { verificarToken } = require('../middleware/authMiddleware');
 
-const router = express.Router();
+const router = express.Router(); // Creamos instancia del enrutador
 
-router.post('/categorias', verificarToken, createCategory); // Crear categoría
-router.get('/categorias', verificarToken, getCategoriesByUser); // Obtener categorías
-router.put('/categorias/:id', verificarToken, updateCategory); // Editar categoría
-router.delete('/categorias/:id', verificarToken, deleteCategory); // Eliminar categoría
+// ===============================================
+// ➕ Crear nueva categoría
+// ===============================================
+// Ruta: POST /api/categorias
+// Protegida con token
+router.post('/categorias', verificarToken, createCategory);
 
+// ===============================================
+// 📄 Obtener todas las categorías del usuario autenticado
+// ===============================================
+// Ruta: GET /api/categorias
+router.get('/categorias', verificarToken, getCategoriesByUser);
+
+// ===============================================
+// ✏️ Editar categoría por ID
+// ===============================================
+// Ruta: PUT /api/categorias/:id
+router.put('/categorias/:id', verificarToken, updateCategory);
+
+// ===============================================
+// 🗑️ Eliminar categoría por ID
+// ===============================================
+// Ruta: DELETE /api/categorias/:id
+router.delete('/categorias/:id', verificarToken, deleteCategory);
+
+// Exportamos el enrutador para ser usado en index.js
 module.exports = router;
