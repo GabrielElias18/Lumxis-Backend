@@ -2,39 +2,33 @@
 // 🔗 CONEXIÓN A POSTGRESQL USANDO SEQUELIZE ORM
 // ==================================================
 
-// Importamos Sequelize, el ORM para trabajar con bases de datos SQL en Node.js
 const { Sequelize } = require('sequelize');
-
-// Cargamos las variables de entorno desde el archivo .env
 require('dotenv').config();
 
 // Creamos una nueva instancia de Sequelize con los datos de conexión
 const sequelize = new Sequelize(
-  process.env.DB_NAME,      // Nombre de la base de datos
-  process.env.DB_USER,      // Usuario de la base de datos
-  process.env.DB_PASSWORD,  // Contraseña del usuario
+  process.env.DB_NAME,      
+  process.env.DB_USER,      
+  process.env.DB_PASSWORD,  
   {
-    host: process.env.DB_HOST,     // Dirección del servidor (por lo general 'localhost')
-    dialect: 'postgres',           // Especificamos que usamos PostgreSQL
-    logging: false,                // Desactiva los logs de SQL en consola (útil en producción)
+    host: process.env.DB_HOST,     
+    dialect: 'postgres',           
+    logging: false,                
 
-    // Configuraciones del pool de conexiones
     pool: {
-      max: 5,          // Máximo de conexiones al mismo tiempo
-      min: 0,          // Mínimo de conexiones
-      acquire: 30000,  // Tiempo máximo (ms) que Sequelize intentará obtener una conexión antes de lanzar error
-      idle: 10000      // Tiempo que una conexión puede estar inactiva antes de ser liberada
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
     },
 
-    // Configuraciones globales para modelos
     define: {
-      timestamps: false,   // Desactiva automáticamente los campos createdAt y updatedAt
-      underscored: true    // Usa snake_case en lugar de camelCase para los campos (ej: created_at en lugar de createdAt)
+      timestamps: false,
+      underscored: true
     },
 
-    // Opciones específicas del dialecto (útil para entornos como Heroku que requieren SSL)
     dialectOptions: {
-      ssl: process.env.NODE_ENV === 'production'  // Usa SSL solo si estamos en producción
+      ssl: process.env.NODE_ENV === 'production'
     }
   }
 );
@@ -42,17 +36,26 @@ const sequelize = new Sequelize(
 // ===========================
 // 📡 PRUEBA DE CONEXIÓN
 // ===========================
-// Esta función intenta autenticar la conexión a la base de datos
-async function testConnection() {
+async function connectAndSync() {
   try {
-    await sequelize.authenticate(); // Verifica si la conexión es válida
+    await sequelize.authenticate();
     console.log('✅ Conexión a la base de datos establecida correctamente.');
+
+    // 👇 Importamos los modelos antes de sincronizar
+    require('../models/userModel');        // Asegúrate de que la ruta sea correcta
+    require('../models/productModel');     // Agrega más modelos si los tienes
+    require('../models/categoryModel');    // Por ejemplo, modelo de categorías
+
+    // 📦 Sincronizamos los modelos con la base de datos
+    await sequelize.sync({ alter: true }); // Usa force: true si estás en desarrollo inicial
+
+    console.log('✅ Tablas sincronizadas con la base de datos.');
   } catch (error) {
-    console.error('❌ No se pudo conectar a la base de datos:', error);
+    console.error('❌ Error al conectar o sincronizar con la base de datos:', error);
   }
 }
 
-testConnection(); // Ejecutamos la prueba de conexión
+connectAndSync();
 
 // Exportamos la instancia de Sequelize para usarla en modelos y controladores
 module.exports = sequelize;

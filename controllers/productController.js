@@ -1,55 +1,82 @@
 const Producto = require('../models/productModel');
-const Categoria = require('../models/categoryModel'); // Modelo de Categoría
+const Categoria = require('../models/categoryModel');
+const cloudinary = require('../config/cloudinary');
+const { Readable } = require('stream');
+
+// ========================================================
+// Función utilitaria para subir imagen a Cloudinary desde buffer
+// ========================================================
+const subirACloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream((err, result) => {
+      if (result) resolve(result.secure_url);
+      else reject(err);
+    });
+
+    const readable = new Readable();
+    readable._read = () => {};
+    readable.push(buffer);
+    readable.push(null);
+    readable.pipe(stream);
+  });
+};
 
 // ========================================================
 // ➕ Crear un nuevo producto con imágenes
 // ========================================================
 const createProduct = async (req, res) => {
   try {
-    // 📥 Datos recibidos del cuerpo de la solicitud
     const {
       nombre,
       descripcion,
       cantidadDisponible,
       precioCompra,
       precioVenta,
-      categoriaNombre
+      categoriaNombre,
+      categoriaid
     } = req.body;
 
-    const usuarioId = req.usuario.usuarioId; // ID del usuario autenticado
+    const usuarioId = req.usuario.usuarioId;
 
-    // 🛡️ Validaciones básicas
     if (!usuarioId) {
       return res.status(400).json({ mensaje: 'Usuario no autenticado.' });
     }
 
-    if (!categoriaNombre) {
-      return res.status(400).json({ mensaje: 'El nombre de la categoría es obligatorio.' });
+    if (!categoriaNombre && !categoriaid) {
+      return res.status(400).json({ mensaje: 'Debes proporcionar el nombre o el ID de la categoría.' });
     }
 
-    // 🔍 Verificar que la categoría existe y pertenece al usuario
-    const categoria = await Categoria.findOne({
-      where: { nombre: categoriaNombre, usuarioid: usuarioId }
-    });
+    const categoria = categoriaid
+      ? await Categoria.findOne({ where: { categoriaid, usuarioid: usuarioId } })
+      : await Categoria.findOne({ where: { nombre: categoriaNombre, usuarioid: usuarioId } });
 
     if (!categoria) {
       return res.status(400).json({ mensaje: 'La categoría no existe o no pertenece al usuario.' });
     }
 
-    // 📸 Procesar imágenes subidas (si hay)
-    const imagenes = req.files
-      ? req.files.map(file => `/uploads/${file.filename}`)
-      : [];
+    // 📸 Subida de imágenes sin duplicados
+    const imagenes = [];
+    if (req.files && Array.isArray(req.files)) {
+      const buffersUnicos = new Set();
+      for (const file of req.files) {
+        const hash = file.buffer.toString('base64');
+        if (!buffersUnicos.has(hash)) {
+          buffersUnicos.add(hash);
+          const url = await subirACloudinary(file.buffer);
+          imagenes.push(url);
+        }
+      }
+    }
 
-    // 🧱 Crear producto con categoría asociada
+    // 🧱 Crear producto
     const nuevoProducto = await Producto.create({
       nombre,
       descripcion,
-      cantidadDisponible,
-      precioCompra,
-      precioVenta,
+      cantidad_disponible: parseInt(cantidadDisponible) || 0,
+      precio_compra: parseFloat(precioCompra),
+      precio_venta: parseFloat(precioVenta),
       imagenes,
-      categoriaNombre,
+      categoria_nombre: categoria.nombre,
       categoriaid: categoria.categoriaid,
       usuarioid: usuarioId
     });
@@ -66,18 +93,14 @@ const createProduct = async (req, res) => {
 };
 
 // ========================================================
-// 📄 Obtener todos los productos del usuario autenticado
-// ========================================================
 const getAllProducts = async (req, res) => {
   try {
     const usuarioid = req.usuario.usuarioId;
 
-    // 📥 Obtener productos de la base de datos
     const productos = await Producto.findAll({
       where: { usuarioid }
     });
 
-    // 🌐 Agregar la URL completa a las imágenes
     const productosConImagenes = productos.map(producto => ({
       ...producto.toJSON(),
       imagenes: producto.imagenes
@@ -93,15 +116,11 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-// ========================================================
-// 🔍 Obtener un producto por su ID
-// ========================================================
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     const usuarioId = req.usuario.usuarioId;
 
-    // 🔍 Buscar producto por ID y usuario
     const producto = await Producto.findOne({
       where: { productoid: id, usuarioid: usuarioId }
     });
@@ -123,9 +142,6 @@ const getProductById = async (req, res) => {
   }
 };
 
-// ========================================================
-// ✏️ Actualizar un producto existente
-// ========================================================
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -141,7 +157,6 @@ const updateProduct = async (req, res) => {
 
     const usuarioid = req.usuario.usuarioId;
 
-    // 🔍 Buscar el producto a editar
     const producto = await Producto.findOne({
       where: { productoid: id, usuarioid }
     });
@@ -150,7 +165,6 @@ const updateProduct = async (req, res) => {
       return res.status(404).json({ mensaje: 'Producto no encontrado o no pertenece al usuario.' });
     }
 
-    // 📌 Obtener nombre de categoría si solo se pasa el ID
     let nombreCategoria = categoria_nombre;
 
     if (!nombreCategoria && categoriaid) {
@@ -158,18 +172,16 @@ const updateProduct = async (req, res) => {
       if (categoria) nombreCategoria = categoria.nombre;
     }
 
-    // 📸 Si se subieron nuevas imágenes, reemplazar; si no, conservar existentes
     const nuevasImagenes = req.files && req.files.length > 0
-      ? req.files.map(file => `/uploads/${file.filename}`)
+      ? await Promise.all(req.files.map(file => subirACloudinary(file.buffer)))
       : producto.imagenes || [];
 
-    // ✏️ Actualizar producto
     await producto.update({
       nombre: nombre || producto.nombre,
       descripcion: descripcion || producto.descripcion,
-      cantidadDisponible: cantidadDisponible !== undefined ? cantidadDisponible : producto.cantidadDisponible,
-      precioCompra: precioCompra !== undefined ? precioCompra : producto.precioCompra,
-      precioVenta: precioVenta !== undefined ? precioVenta : producto.precioVenta,
+      cantidad_disponible: cantidadDisponible !== undefined ? parseInt(cantidadDisponible) : producto.cantidad_disponible,
+      precio_compra: precioCompra !== undefined ? parseFloat(precioCompra) : producto.precio_compra,
+      precio_venta: precioVenta !== undefined ? parseFloat(precioVenta) : producto.precio_venta,
       categoriaid: categoriaid || producto.categoriaid,
       categoria_nombre: nombreCategoria,
       imagenes: nuevasImagenes
@@ -186,15 +198,11 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// ========================================================
-// 🗑️ Eliminar un producto
-// ========================================================
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const usuarioid = req.usuario.usuarioId;
 
-    // 🧹 Eliminar si pertenece al usuario
     const resultado = await Producto.destroy({
       where: { productoid: id, usuarioid }
     });

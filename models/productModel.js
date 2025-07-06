@@ -1,5 +1,9 @@
+// ================================================
+// 📦 MODELO DE PRODUCTO CON RELACIONES Y CLOUDINARY
+// ================================================
+
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // Asegúrate de tener la configuración de Sequelize
+const sequelize = require('../config/database');
 const Categoria = require('./categoryModel');
 const Usuario = require('./userModel');
 
@@ -16,49 +20,55 @@ const Producto = sequelize.define('Producto', {
   descripcion: {
     type: DataTypes.TEXT,
   },
-  cantidadDisponible: {
+  cantidad_disponible: {
     type: DataTypes.INTEGER,
-    allowNull: false,
     defaultValue: 0,
+    allowNull: false
   },
-  precioCompra: {
+  precio_compra: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
-  precioVenta: {
+  precio_venta: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
   imagenes: {
-    type: DataTypes.ARRAY(DataTypes.TEXT), // Guarda como array de texto
-    defaultValue: [],
+    type: DataTypes.ARRAY(DataTypes.TEXT),
+    defaultValue: []
   },
-  categoriaNombre: {
+  categoria_nombre: {
     type: DataTypes.STRING(100),
+    allowNull: true
   },
-  categoriaid: {
+  categoriaid: { // 👈 importante: en minúscula
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Categoria,
-      key: 'categoriaId',
-    },
+      model: 'categorias',
+      key: 'categoriaid'
+    }
   },
   usuarioid: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Usuario,
-      key: 'usuarioId',
-    },
+      model: 'usuarios',
+      key: 'usuarioid'
+    }
   },
   createdat: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
 }, {
-  timestamps: false,
   tableName: 'productos',
+  timestamps: false,
+  underscored: true
 });
+
+// Relaciones
+Producto.belongsTo(Categoria, { foreignKey: 'categoriaid', as: 'categoria' });
+Producto.belongsTo(Usuario, { foreignKey: 'usuarioid', as: 'usuario' });
 
 module.exports = Producto;

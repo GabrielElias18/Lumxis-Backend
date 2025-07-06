@@ -34,7 +34,7 @@ const Cliente = sequelize.define('Cliente',{
     allowNull: false,
     references: {
       model: Usuario,
-      key: 'usuarioId',
+      key: 'usuarioid',
     },
   }
 
