@@ -47,35 +47,47 @@
 
 ```
 Inventario-Lumxis/
-│
+├── 📁 config/
+|   ├── cloudinary.js
+│   ├── database.js
+|   ├── db.js
+|
 ├── 📁 controllers/          # Lógica de negocio
+│   ├── authController.js
 │   ├── categoryController.js
 │   ├── clientController.js
+│   ├── egresoController.js
 │   ├── productController.js
-│   ├── proveedorController.js
-│   └── egresoController.js
+|   ├── proveedorController.js
+│   ├── ventaController.js
 │
 ├── 📁 middleware/           # Autenticación y roles
-│   └── verificarToken.js
-│
+│   ├── authMiddleware.js
+|   ├── multer.js
+|
 ├── 📁 models/              # Modelos Sequelize
-│   ├── User.js
-│   ├── Category.js
-│   ├── Product.js
-│   ├── Client.js
-│   ├── Proveedor.js
-│   └── Egreso.js
-│
+│   ├── categoryModel.js
+│   ├── clientModel.js
+│   ├── egresoModel.js
+│   ├── productModel.js
+│   ├── proveedorModel.js
+│   ├── userModel.js
+|   ├── ventaModel.js
+|
 ├── 📁 routes/              # Rutas de la API
-│   ├── auth.js
-│   ├── categories.js
-│   ├── products.js
-│   ├── clients.js
-│   ├── proveedores.js
-│   └── egresos.js
+│   ├── categoryRoutes.js
+│   ├── clientRoutes.js
+│   ├── egresoRoutes.js
+│   ├── productRoutes.js
+│   ├── proveedorRoutes.js
+│   ├── userRoutes.js
+|   ├── Routes.js
 │
-├── 📁 uploads/             # Imágenes de productos
 ├── 📁 utils/               # Utilidades (JWT, helpers)
+|   ├── jwt.js
+|
+├── 📄 .env            
+├── 📄 .gitignore
 ├── 📄 server.js               # Servidor principal
 ├── 📄 package.json
 └── 📄 README.md
