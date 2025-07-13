@@ -25,6 +25,12 @@ const verificarToken = (req, res, next) => {
     // Adjuntamos el usuario decodificado al objeto de la petición
     req.usuario = usuario;
 
+    // ⚠️ Verificación extra: asegurar que el usuario tenga tenant_db
+    if (!usuario.tenant_db) {
+      return res.status(400).json({ mensaje: 'Usuario sin base de datos asignada (tenantDb).' });
+    }
+
+
     // Continuamos con el siguiente middleware o controlador
     next();
   } catch (error) {
@@ -51,3 +57,5 @@ module.exports = {
   verificarToken,
   verificarAdministrador
 };
+// Este middleware verifica el token JWT y asegura que el usuario tenga un tenant_db asignado.
+// También proporciona un middleware adicional para verificar si el usuario tiene permisos de administrador.

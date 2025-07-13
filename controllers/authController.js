@@ -2,9 +2,45 @@
 // 🔐 CONTROLADOR DE AUTENTICACIÓN (Registro y Login)
 // ======================================================
 
-const Usuario = require('../models/userModel');       // Modelo de Usuario
-const { generarToken } = require('../utils/jwt');     // Función para generar token JWT
-const bcrypt = require('bcrypt');                     // Para encriptar y comparar contraseñas
+const { Sequelize } = require('sequelize');
+const sequelize = require('../config/database'); // conexión principal
+const defineUsuarioModel = require('../models/userModel');
+const Usuario = defineUsuarioModel(sequelize, require('sequelize').DataTypes);
+const { generarToken } = require('../utils/jwt');
+const bcrypt = require('bcrypt');
+
+// Función para limpiar y transformar nombres
+const slugify = (texto) =>
+  texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // quitar acentos
+    .replace(/\s+/g, '_')            // espacios a _
+    .replace(/[^\w]/g, '')           // quitar símbolos raros
+    .toLowerCase();
+
+// 📦 Crear una nueva base de datos usando Sequelize
+const crearBaseDeDatos = async (nombreDB) => {
+  try {
+    const sequelizeTemp = new Sequelize(
+      'postgres',
+      process.env.DB_USER,
+      process.env.DB_PASSWORD,
+      {
+        host: process.env.DB_HOST,
+        dialect: 'postgres',
+        logging: false,
+      }
+    );
+
+    await sequelizeTemp.query(`CREATE DATABASE "${nombreDB}";`);
+    await sequelizeTemp.close();
+
+    console.log(`✅ Base de datos ${nombreDB} creada correctamente.`);
+  } catch (error) {
+    console.error(`❌ Error al crear la base de datos ${nombreDB}:`, error);
+    throw error;
+  }
+};
 
 // ===============================================
 // ➕ REGISTRAR USUARIO (Público o Administrador)
@@ -24,24 +60,56 @@ const registerUser = async (req, res) => {
 
     console.log('📌 Datos recibidos para registro:', { ...req.body, contraseña: '[PROTECTED]' });
 
-    // 🔍 Verificar si ya existe un usuario con ese correo
     const usuarioExistente = await Usuario.findOne({ where: { correo } });
     if (usuarioExistente) {
       return res.status(400).json({ mensaje: 'El correo ya está registrado.' });
     }
 
-    // 🧾 Determinar el rol según la ruta
     let nuevoRol = req.path === '/register-public' ? 'vendedor' : rol || 'vendedor';
 
-    // Validación extra si se intenta registrar como admin sin usar la ruta correcta
     if (req.path === '/register-admin' && rol !== 'administrador') {
       return res.status(400).json({ mensaje: 'Debes registrar administradores en esta ruta.' });
     }
 
-    // 🔐 Encriptar la contraseña antes de guardarla en la BD
-    const contraseñaEncriptada = await bcrypt.hash(contraseña, 10); // 10 = saltRounds
+    const contraseñaEncriptada = await bcrypt.hash(contraseña, 10);
 
-    // 🏗️ Crear el nuevo usuario
+    // 🧱 Crear nombre de base de datos personalizado
+    let nombreTenantDB = `db_${slugify(primerNombre)}_${slugify(primerApellido)}`;
+
+    // 🧱 Crear la base de datos
+    await crearBaseDeDatos(nombreTenantDB);
+
+    // 📥 Cargar conexión a la nueva base de datos
+    const nuevaConexion = new Sequelize(
+      nombreTenantDB,
+      process.env.DB_USER,
+      process.env.DB_PASSWORD,
+      {
+        host: process.env.DB_HOST,
+        dialect: 'postgres',
+        logging: false,
+      }
+    );
+
+    // 🧩 Cargar y sincronizar modelos
+    const defineCategoriaModel = require('../models/categoryModel');
+    const defineProductoModel = require('../models/productModel');
+    // const defineClienteModel = require('../models/clientModel');
+    // const defineProveedorModel = require('../models/proveedorModel');
+    const defineVentaModel = require('../models/ventaModel');
+    const defineEgresoModel = require('../models/egresoModel');
+
+    const Categoria = defineCategoriaModel(nuevaConexion, Sequelize.DataTypes);
+    const Producto = defineProductoModel(nuevaConexion, Sequelize.DataTypes);
+    // const Cliente = defineClienteModel(nuevaConexion, Sequelize.DataTypes);
+    // const Proveedor = defineProveedorModel(nuevaConexion, Sequelize.DataTypes);
+    Venta = defineVentaModel(nuevaConexion, Sequelize.DataTypes);
+    Egreso = defineEgresoModel(nuevaConexion, Sequelize.DataTypes);
+
+    await nuevaConexion.sync();
+
+
+    // 📦 Crear el usuario en la base de datos principal
     const nuevoUsuario = await Usuario.create({
       primer_nombre: primerNombre,
       segundo_nombre: segundoNombre,
@@ -50,15 +118,14 @@ const registerUser = async (req, res) => {
       correo,
       telefono,
       contraseña: contraseñaEncriptada,
-      rol: nuevoRol
+      rol: nuevoRol,
+      tenant_db: nombreTenantDB
     });
 
     console.log('✅ Usuario registrado:', { ...nuevoUsuario.toJSON(), contraseña: '[PROTECTED]' });
 
-    // 🎟️ Generar token JWT para el nuevo usuario
     const token = generarToken(nuevoUsuario.toJSON());
 
-    // 🧾 Devolver solo los datos necesarios al cliente
     const usuarioData = {
       id: nuevoUsuario.usuarioid,
       primerNombre: nuevoUsuario.primer_nombre,
@@ -70,7 +137,6 @@ const registerUser = async (req, res) => {
       rol: nuevoUsuario.rol
     };
 
-    // 📤 Respuesta al cliente
     res.status(201).json({
       mensaje: 'Usuario registrado exitosamente.',
       token,
@@ -92,18 +158,15 @@ const loginUser = async (req, res) => {
 
     console.log('📌 Datos recibidos para login:', { correo, contraseña: '[PROTECTED]' });
 
-    // Validación de campos requeridos
     if (!correo || !contraseña) {
       return res.status(400).json({ mensaje: 'Correo y contraseña son obligatorios.' });
     }
 
-    // Buscar el usuario en la base de datos
     const usuario = await Usuario.findOne({ where: { correo } });
     if (!usuario) {
       return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
     }
 
-    // Comparar la contraseña ingresada con la almacenada en BD
     const contraseñaValida = await bcrypt.compare(contraseña, usuario.contraseña);
     if (!contraseñaValida) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas.' });
@@ -111,10 +174,8 @@ const loginUser = async (req, res) => {
 
     console.log('✅ Usuario autenticado:', usuario.correo);
 
-    // Generar token JWT
     const token = generarToken(usuario.toJSON());
 
-    // Construir objeto de respuesta
     const usuarioData = {
       id: usuario.usuarioid,
       primerNombre: usuario.primer_nombre,
@@ -126,7 +187,6 @@ const loginUser = async (req, res) => {
       rol: usuario.rol
     };
 
-    // 📤 Respuesta con token y datos del usuario
     res.status(200).json({
       mensaje: 'Inicio de sesión exitoso.',
       token,
@@ -139,7 +199,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Exportamos las funciones para usarlas en las rutas
 module.exports = {
   registerUser,
   loginUser

@@ -2,45 +2,30 @@
 // 📤 RUTAS PARA GESTIÓN DE EGRESOS DE INVENTARIO
 // ======================================================
 
-const express = require("express");
+const express = require('express');
 
-// Importamos los controladores para egresos
+// Controladores de egresos
 const {
   createEgreso,
   getEgresos,
   updateEgreso,
   deleteEgreso
-} = require("../controllers/egresoController");
+} = require('../controllers/egresoController');
 
-// Middleware para verificar token del usuario
-const { verificarToken } = require("../middleware/authMiddleware");
+// Middlewares
+const { verificarToken } = require('../middleware/authMiddleware');
+const tenantMiddleware = require('../middleware/tenantMiddleware'); // 👈 Necesario para multi-tenant
 
-// Instanciamos el router de Express
+// Instancia del router
 const router = express.Router();
 
-// ===============================================
-// ➕ Registrar un nuevo egreso (salida del inventario)
-// ===============================================
-// Ruta: POST /api/egresos/
-router.post("/", verificarToken, createEgreso);
+router.post('/', verificarToken, tenantMiddleware, createEgreso);
 
-// ===============================================
-// 📄 Obtener todos los egresos del usuario autenticado
-// ===============================================
-// Ruta: GET /api/egresos/
-router.get("/", verificarToken, getEgresos);
+router.get('/', verificarToken, tenantMiddleware, getEgresos);
 
-// ===============================================
-// ✏️ Editar un egreso específico por ID
-// ===============================================
-// Ruta: PUT /api/egresos/:id
-router.put("/:id", verificarToken, updateEgreso);
+router.put('/:id', verificarToken, tenantMiddleware, updateEgreso);
 
-// ===============================================
-// 🗑️ Eliminar un egreso específico por ID
-// ===============================================
-// Ruta: DELETE /api/egresos/:id
-router.delete("/:id", verificarToken, deleteEgreso);
+router.delete('/:id', verificarToken, tenantMiddleware, deleteEgreso);
 
-// Exportamos el router para ser utilizado en index.js
+// Exportar router
 module.exports = router;

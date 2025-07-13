@@ -12,24 +12,16 @@ const {
 } = require('../controllers/productController');
 
 const { verificarToken } = require('../middleware/authMiddleware');
-const upload = require('../middleware/multer'); // ✅ Ahora usamos el multer centralizado en memoria
+const tenantMiddleware = require('../middleware/tenantMiddleware'); // ✅ Añadido
+const upload = require('../middleware/multer'); // ✅ Multer para manejar imágenes
 
 const router = express.Router();
 
-// ➕ Crear un nuevo producto (con imágenes)
-router.post('/', verificarToken, upload.array('imagenes', 5), createProduct); // Hasta 5 imágenes
+router.post('/', verificarToken, tenantMiddleware, upload.array('imagenes', 5), createProduct);
+router.get( '/', verificarToken, tenantMiddleware, getAllProducts);
+router.get('/:id', verificarToken, tenantMiddleware, getProductById);
+router.put('/:id', verificarToken, tenantMiddleware, upload.array('imagenes', 5), updateProduct);
+router.delete('/:id', verificarToken, tenantMiddleware, deleteProduct);
 
-// 📄 Obtener todos los productos
-router.get('/', verificarToken, getAllProducts);
-
-// 🔍 Obtener un producto específico por su ID
-router.get('/:id', verificarToken, getProductById);
-
-// ✏️ Actualizar un producto (con imágenes opcionales)
-router.put('/:id', verificarToken, upload.array('imagenes', 5), updateProduct);
-
-// 🗑️ Eliminar un producto
-router.delete('/:id', verificarToken, deleteProduct);
-
-// Exportamos el router para usarlo en index.js
+// Exportamos el router para usarlo en server.js o index.js
 module.exports = router;

@@ -1,46 +1,47 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // Asegúrate de tener la configuración de Sequelize
-const Usuario = require('./userModel');
-
-const Cliente = sequelize.define('Cliente',{
-   clienteid: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  nombreCliente: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    field: 'nombre_cliente'
-  },
-
-  telefono: {
-    type: DataTypes.STRING(20),
-    allowNull: false
-  },
-
-  correo: {
-    type: DataTypes.STRING(100),
-    allowNull: false
-  },
-
-  direccion: {
-    type: DataTypes.STRING(100),
-    allowNull: false
-  },
-  
-  usuarioid: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Usuario,
-      key: 'usuarioid',
+module.exports = (sequelize, DataTypes) => {
+  const Cliente = sequelize.define('Cliente', {
+    clienteid: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
     },
-  }
-
-}, {
+    nombreCliente: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: 'nombre_cliente'
+    },
+    telefono: {
+      type: DataTypes.STRING(20),
+      allowNull: false
+    },
+    correo: {
+      type: DataTypes.STRING(100),
+      allowNull: false
+    },
+    direccion: {
+      type: DataTypes.STRING(100),
+      allowNull: false
+    },
+    usuarioid: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'usuarios',
+        key: 'usuarioid'
+      }
+    }
+  }, {
     timestamps: false,
-    tableName: 'clientes'
-})
+    tableName: 'clientes',
+    underscored: true
+  });
 
-module.exports = Cliente;
+  Cliente.associate = (models) => {
+    Cliente.belongsTo(models.Usuario, {
+      foreignKey: 'usuarioid',
+      as: 'usuario'
+    });
+  };
+
+  return Cliente;
+};

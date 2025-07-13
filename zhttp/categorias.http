@@ -1,0 +1,18 @@
+### Iniciar sesion
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "correo": "gvaldelamar2003@gmail.com",
+    "contraseña": "123456"
+}
+
+### Crear nuevo cliente
+POST http://localhost:3000/api/categorias
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvaWQiOjEsImNvcnJlbyI6Imd2YWxkZWxhbWFyMjAwM0BnbWFpbC5jb20iLCJwcmltZXJOb21icmUiOiJHYWJyaWVsIiwic2VndW5kb05vbWJyZSI6IkVsaWFzIiwicHJpbWVyQXBlbGxpZG8iOiJWYWxkZWxhbWFyIiwic2VndW5kb0FwZWxsaWRvIjoiQ2FsZGVyYSIsInRlbGVmb25vIjoiMTIzNDU2Iiwicm9sIjoidmVuZGVkb3IiLCJ0ZW5hbnRfZGIiOiJkYl9nYWJyaWVsX3ZhbGRlbGFtYXIiLCJpYXQiOjE3NTI0MjU2NDUsImV4cCI6MTc1MjQyOTI0NX0.D_tnjW9y2FlMduTYX654TRYtCUtW52Gu0w4kn8Klitc
+
+{
+  "nombre": "Bebidas",
+  "descripcion": "3111234567"
+}

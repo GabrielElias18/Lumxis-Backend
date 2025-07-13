@@ -1,49 +1,44 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const Usuario = require('./userModel');
-
-const Categoria = sequelize.define('Categoria', {
-  categoriaid: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
-  nombre: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    validate: {
-      notEmpty: true
+module.exports = (sequelize, DataTypes) => {
+  const Categoria = sequelize.define('Categoria', {
+    categoriaid: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    nombre: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    descripcion: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    usuarioid: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    createdat: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
     }
-  },
-  descripcion: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    validate: {
-      notEmpty: true
-    }
-  },
-  usuarioid: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'usuarios',
-      key: 'usuarioid'
-    }
-  },
-  createdat: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  }
-}, {
-  tableName: 'categorias',
-  timestamps: false,
-  underscored: true
-});
+  }, {
+    tableName: 'categorias',
+    timestamps: false,
+    underscored: true
+  });
 
-// Definir la relación con Usuario
-Categoria.belongsTo(Usuario, {
-  foreignKey: 'usuarioid',
-  as: 'usuario'
-});
+  Categoria.associate = (models) => {
+    Categoria.belongsTo(models.Usuario, {
+      foreignKey: 'usuarioid',
+      as: 'usuario'
+    });
+  };
 
-module.exports = Categoria;
+  return Categoria;
+};

@@ -3,8 +3,6 @@
 // ======================================================
 
 const express = require('express');
-
-// Importamos funciones del controlador de ventas
 const {
   createVenta,
   getVentas,
@@ -12,35 +10,15 @@ const {
   deleteVenta
 } = require('../controllers/ventaController');
 
-// Middleware para verificar autenticación por token
 const { verificarToken } = require('../middleware/authMiddleware');
+const tenantMiddleware = require('../middleware/tenantMiddleware'); // 👈 AÑADIR ESTO
 
-// Creamos una instancia de Router
 const router = express.Router();
 
-// ===============================================
-// ➕ Registrar una nueva venta
-// ===============================================
-// Ruta: POST /api/ventas/
-router.post('/', verificarToken, createVenta);
+// Asegúrate de usar ambos middlewares: auth + tenant
+router.post('/', verificarToken, tenantMiddleware, createVenta);
+router.get('/', verificarToken, tenantMiddleware, getVentas);
+router.put('/:id', verificarToken, tenantMiddleware, updateVenta);
+router.delete('/:id', verificarToken, tenantMiddleware, deleteVenta);
 
-// ===============================================
-// 📄 Obtener todas las ventas del usuario autenticado
-// ===============================================
-// Ruta: GET /api/ventas/
-router.get('/', verificarToken, getVentas);
-
-// ===============================================
-// ✏️ Editar una venta por su ID
-// ===============================================
-// Ruta: PUT /api/ventas/:id
-router.put('/:id', verificarToken, updateVenta);
-
-// ===============================================
-// 🗑️ Eliminar una venta por su ID
-// ===============================================
-// Ruta: DELETE /api/ventas/:id
-router.delete('/:id', verificarToken, deleteVenta);
-
-// Exportamos el router para utilizarlo en el archivo principal
 module.exports = router;

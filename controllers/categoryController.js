@@ -2,19 +2,19 @@
 // 📁 CONTROLADOR DE CATEGORÍAS
 // ======================================================
 
-const Categoria = require('../models/categoryModel');
-
 // ===============================================
 // ➕ Crear una nueva categoría
 // ===============================================
 const createCategory = async (req, res) => {
   try {
     const { nombre, descripcion } = req.body;
-    const usuarioId = req.usuario.usuarioId; // ID del usuario autenticado
+    const usuarioId = req.usuario.usuarioid; // ID del usuario autenticado
 
     if (!usuarioId) {
       return res.status(400).json({ mensaje: 'Usuario no autenticado.' });
     }
+
+    const Categoria = req.db.Category;
 
     // 🔍 Verificar si ya existe una categoría con el mismo nombre para este usuario
     const categoriaExistente = await Categoria.findOne({
@@ -54,9 +54,9 @@ const createCategory = async (req, res) => {
 // ===============================================
 const getCategoriesByUser = async (req, res) => {
   try {
-    const usuarioId = req.usuario.usuarioId;
+    const usuarioId = req.usuario.usuarioid;
+    const Categoria = req.db.Category;
 
-    // 🔍 Obtener todas las categorías del usuario autenticado, ordenadas por fecha de creación
     const categorias = await Categoria.findAll({
       where: { usuarioid: usuarioId },
       order: [['createdat', 'DESC']]
@@ -80,9 +80,9 @@ const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, descripcion } = req.body;
-    const usuarioId = req.usuario.usuarioId;
+    const usuarioId = req.usuario.usuarioid;
+    const Categoria = req.db.Category;
 
-    // 🔍 Buscar la categoría por ID (sin validar usuario, puedes añadir si lo deseas)
     const categoria = await Categoria.findOne({
       where: { categoriaid: id }
     });
@@ -93,7 +93,6 @@ const updateCategory = async (req, res) => {
       });
     }
 
-    // ✏️ Actualizar nombre y descripción si se enviaron nuevos valores
     await categoria.update({
       nombre: nombre || categoria.nombre,
       descripcion: descripcion || categoria.descripcion
@@ -119,9 +118,9 @@ const updateCategory = async (req, res) => {
 const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuarioId = req.usuario.usuarioId;
+    const usuarioId = req.usuario.usuarioid;
+    const Categoria = req.db.Category;
 
-    // 🔍 Eliminar la categoría por ID (sin validar usuario, puedes añadir si lo deseas)
     const resultado = await Categoria.destroy({
       where: { categoriaid: id }
     });
@@ -143,9 +142,6 @@ const deleteCategory = async (req, res) => {
   }
 };
 
-// ======================================================
-// 📤 Exportar funciones del controlador
-// ======================================================
 module.exports = {
   createCategory,
   getCategoriesByUser,

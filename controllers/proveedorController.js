@@ -113,9 +113,9 @@ const updateProveedor = async (req, res) => {
 
     const usuarioId = req.usuario.usuarioId;
 
-    // 🔍 Verificar existencia del proveedor por ID
+    // 🔍 Verificar existencia del proveedor por ID y usuario
     const proveedor = await Proveedor.findOne({
-      where: { proveedorid: id }
+      where: { proveedorid: id, usuarioid: usuarioId }
     });
 
     if (!proveedor) {
@@ -158,9 +158,9 @@ const deleteProveedor = async (req, res) => {
     const { id } = req.params;
     const usuarioId = req.usuario.usuarioId;
 
-    // 🧹 Eliminar el proveedor por ID
+    // 🧹 Eliminar el proveedor por ID y usuario
     const resultado = await Proveedor.destroy({
-      where: { proveedorid: id }
+      where: { proveedorid: id, usuarioid: usuarioId }
     });
 
     if (!resultado) {

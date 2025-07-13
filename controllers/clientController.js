@@ -2,15 +2,11 @@
 // 👥 CONTROLADOR DE CLIENTES
 // ======================================================
 
-const Cliente = require('../models/clientModel');
-
-// ===============================================
-// ➕ Crear un nuevo cliente
-// ===============================================
 const createClient = async (req, res) => {
   try {
     const { nombreCliente, telefono, correo, direccion } = req.body;
     const usuarioId = req.usuario.usuarioId; // ID del usuario autenticado
+    const Cliente = req.tenantSequelize.models.Cliente;
 
     if (!usuarioId) {
       return res.status(400).json({ mensaje: 'Usuario no autenticado' });
@@ -56,6 +52,7 @@ const createClient = async (req, res) => {
 const getClientes = async (req, res) => {
   try {
     const usuarioId = req.usuario.usuarioId;
+    const Cliente = req.tenantSequelize.models.Cliente;
 
     const clientes = await Cliente.findAll({
       where: { usuarioid: usuarioId },
@@ -80,6 +77,7 @@ const updateCliente = async (req, res) => {
     const { id } = req.params;
     const { nombreCliente, telefono, correo, direccion } = req.body;
     const usuarioId = req.usuario.usuarioId;
+    const Cliente = req.tenantSequelize.models.Cliente;
 
     // Buscar el cliente por ID
     const cliente = await Cliente.findOne({
@@ -118,6 +116,7 @@ const deleteCliente = async (req, res) => {
   try {
     const { id } = req.params;
     const usuarioId = req.usuario.usuarioId;
+    const Cliente = req.tenantSequelize.models.Cliente;
 
     const resultado = await Cliente.destroy({
       where: { clienteid: id }

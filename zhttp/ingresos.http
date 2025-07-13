@@ -1,0 +1,35 @@
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvaWQiOjEsImNvcnJlbyI6Imd2YWxkZWxhbWFyMjAwM0BnbWFpbC5jb20iLCJwcmltZXJOb21icmUiOiJHYWJyaWVsIiwic2VndW5kb05vbWJyZSI6IkdhYnJpZWwiLCJwcmltZXJBcGVsbGlkbyI6IlZhbGRlbGFtYXIiLCJzZWd1bmRvQXBlbGxpZG8iOiJWYWxkZWxhbWFyIiwidGVsZWZvbm8iOiIxMjMiLCJyb2wiOiJ2ZW5kZWRvciIsInRlbmFudF9kYiI6ImRiX2dhYnJpZWxfdmFsZGVsYW1hciIsImlhdCI6MTc1MjQyOTU2NywiZXhwIjoxNzUyNDMzMTY3fQ.WY4e3YRbDISNYSd6ivKvT4EErV2ZFg0YFYPPGy0lzG4
+
+### ➕ Crear nueva venta
+POST {{baseUrl}}/api/ventas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productoNombre": "Manzana",
+  "cantidad": 10,
+  "descripcion": "Venta de café en mostrador"
+}
+
+### 📄 Obtener todas las ventas del usuario
+GET {{baseUrl}}/api/ventas
+Authorization: Bearer {{token}}
+
+### 🔍 Obtener venta por ID (opcional, si implementas este endpoint)
+GET {{baseUrl}}/api/ventas/1
+Authorization: Bearer {{token}}
+
+### ✏️ Actualizar venta por ID
+PUT {{baseUrl}}/api/ventas/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cantidad": 3,
+  "descripcion": "Se corrigió la cantidad vendida"
+}
+
+### 🗑️ Eliminar una venta por ID
+DELETE {{baseUrl}}/api/ventas/1
+Authorization: Bearer {{token}}

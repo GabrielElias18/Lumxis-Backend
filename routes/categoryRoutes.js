@@ -12,35 +12,15 @@ const {
   deleteCategory
 } = require('../controllers/categoryController');
 
-// Importamos middleware para proteger las rutas
+// Importamos middlewares para proteger las rutas y conectar con el tenant
 const { verificarToken } = require('../middleware/authMiddleware');
+const tenantMiddleware = require('../middleware/tenantMiddleware'); // 👈 NUEVO
 
 const router = express.Router(); // Creamos instancia del enrutador
 
-// ===============================================
-// ➕ Crear nueva categoría
-// ===============================================
-// Ruta: POST /api/categorias
-// Protegida con token
-router.post('/categorias', verificarToken, createCategory);
+router.post('/categorias', verificarToken, tenantMiddleware, createCategory);
+router.get('/categorias', verificarToken, tenantMiddleware, getCategoriesByUser);
+router.put('/categorias/:id', verificarToken, tenantMiddleware, updateCategory);
+router.delete('/categorias/:id', verificarToken, tenantMiddleware, deleteCategory);
 
-// ===============================================
-// 📄 Obtener todas las categorías del usuario autenticado
-// ===============================================
-// Ruta: GET /api/categorias
-router.get('/categorias', verificarToken, getCategoriesByUser);
-
-// ===============================================
-// ✏️ Editar categoría por ID
-// ===============================================
-// Ruta: PUT /api/categorias/:id
-router.put('/categorias/:id', verificarToken, updateCategory);
-
-// ===============================================
-// 🗑️ Eliminar categoría por ID
-// ===============================================
-// Ruta: DELETE /api/categorias/:id
-router.delete('/categorias/:id', verificarToken, deleteCategory);
-
-// Exportamos el enrutador para ser usado en index.js
 module.exports = router;

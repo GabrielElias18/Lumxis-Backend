@@ -1,0 +1,48 @@
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvaWQiOjEsImNvcnJlbyI6Imd2YWxkZWxhbWFyMjAwM0BnbWFpbC5jb20iLCJwcmltZXJOb21icmUiOiJHYWJyaWVsIiwic2VndW5kb05vbWJyZSI6IkdhYnJpZWwiLCJwcmltZXJBcGVsbGlkbyI6IlZhbGRlbGFtYXIiLCJzZWd1bmRvQXBlbGxpZG8iOiJWYWxkZWxhbWFyIiwidGVsZWZvbm8iOiIxMjMiLCJyb2wiOiJ2ZW5kZWRvciIsInRlbmFudF9kYiI6ImRiX2dhYnJpZWxfdmFsZGVsYW1hciIsImlhdCI6MTc1MjQyOTU2NywiZXhwIjoxNzUyNDMzMTY3fQ.WY4e3YRbDISNYSd6ivKvT4EErV2ZFg0YFYPPGy0lzG4
+
+### 🔐 Iniciar sesión
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "gvaldelamar2003@gmail.com",
+  "contraseña": "123456"
+}
+
+### ➕ Crear nuevo producto
+POST {{baseUrl}}/api/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Café Molido",
+  "descripcion": "500g de café premium",
+  "cantidadDisponible": 20,
+  "precioCompra": 8000,
+  "precioVenta": 12000,
+  "categoriaNombre": "Bebidas"
+}
+
+### 📄 Obtener todos los productos del usuario
+GET {{baseUrl}}/api/productos
+Authorization: Bearer {{token}}
+
+### 🔍 Obtener un producto por ID
+GET {{baseUrl}}/api/productos/1
+Authorization: Bearer {{token}}
+
+### ✏️ Actualizar un producto por ID
+PUT {{baseUrl}}/api/productos/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Café Premium Actualizado",
+  "descripcion": "Mejor descripción del café",
+  "precioVenta": 13500
+}
+
+### 🗑️ Eliminar un producto por ID
+DELETE {{baseUrl}}/api/productos/1
+Authorization: Bearer {{token}}

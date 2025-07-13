@@ -1,5 +1,6 @@
-const Venta = require('../models/ventaModel');
-const Producto = require('../models/productModel');
+// ========================================================
+// 📁 CONTROLADOR DE VENTAS (multi-tenant)
+// ========================================================
 
 // ========================================================
 // ➕ Registrar una venta
@@ -7,21 +8,19 @@ const Producto = require('../models/productModel');
 const createVenta = async (req, res) => {
   try {
     const { productoNombre, cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const Venta = req.db.Venta;
+    const Producto = req.db.Product;
 
-    // 🔍 Buscar el producto por nombre y usuario
     const producto = await Producto.findOne({ where: { nombre: productoNombre, usuarioid } });
     if (!producto) return res.status(404).json({ mensaje: 'Producto no encontrado' });
 
-    // 🛡️ Verificar stock disponible
     if (producto.cantidadDisponible < cantidad) {
       return res.status(400).json({ mensaje: 'Stock insuficiente' });
     }
 
-    // 💰 Calcular total de la venta
     const total = cantidad * producto.precioVenta;
 
-    // 🧾 Crear la venta
     const nuevaVenta = await Venta.create({
       productoNombre,
       cantidad,
@@ -31,7 +30,6 @@ const createVenta = async (req, res) => {
       usuarioid
     });
 
-    // 🧮 Actualizar stock del producto
     await producto.update({ cantidadDisponible: producto.cantidadDisponible - cantidad });
 
     res.status(201).json(nuevaVenta);
@@ -45,9 +43,9 @@ const createVenta = async (req, res) => {
 // ========================================================
 const getVentas = async (req, res) => {
   try {
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const Venta = req.db.Venta;
 
-    // 🔍 Traer ventas ordenadas por fecha descendente
     const ventas = await Venta.findAll({
       where: { usuarioid },
       order: [['createdAt', 'DESC']]
@@ -66,39 +64,30 @@ const updateVenta = async (req, res) => {
   try {
     const { id } = req.params;
     const { cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const Venta = req.db.Venta;
+    const Producto = req.db.Product;
 
-    // 🔍 Buscar la venta por ID y usuario
     const venta = await Venta.findOne({ where: { ventaid: id, usuarioid } });
-    if (!venta) {
-      return res.status(404).json({ mensaje: 'Venta no encontrada' });
-    }
+    if (!venta) return res.status(404).json({ mensaje: 'Venta no encontrada' });
 
-    // 🔍 Buscar el producto relacionado
     const producto = await Producto.findOne({ where: { nombre: venta.productoNombre, usuarioid } });
-    if (!producto) {
-      return res.status(404).json({ mensaje: 'Producto no encontrado' });
-    }
+    if (!producto) return res.status(404).json({ mensaje: 'Producto no encontrado' });
 
-    // 🧮 Calcular la diferencia en cantidad
     const diferenciaCantidad = cantidad - venta.cantidad;
 
-    // 🛡️ Validar stock suficiente si se aumenta la cantidad
     if (producto.cantidadDisponible < diferenciaCantidad) {
       return res.status(400).json({ mensaje: 'Stock insuficiente para actualizar la venta' });
     }
 
-    // 💰 Recalcular el total de la venta
     const nuevoTotal = cantidad * producto.precioVenta;
 
-    // ✏️ Actualizar la venta
     await venta.update({
       cantidad,
       total: nuevoTotal,
       descripcion
     });
 
-    // 🔄 Actualizar el stock del producto
     await producto.update({
       cantidadDisponible: producto.cantidadDisponible - diferenciaCantidad
     });
@@ -115,13 +104,13 @@ const updateVenta = async (req, res) => {
 const deleteVenta = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const Venta = req.db.Venta;
+    const Producto = req.db.Product;
 
-    // 🔍 Buscar la venta
     const venta = await Venta.findOne({ where: { ventaid: id, usuarioid } });
     if (!venta) return res.status(404).json({ mensaje: 'Venta no encontrada' });
 
-    // 🔄 Devolver el stock al producto
     const producto = await Producto.findOne({ where: { nombre: venta.productoNombre, usuarioid } });
     if (producto) {
       await producto.update({
@@ -129,7 +118,6 @@ const deleteVenta = async (req, res) => {
       });
     }
 
-    // 🧹 Eliminar la venta
     await venta.destroy();
 
     res.json({ mensaje: 'Venta eliminada correctamente' });

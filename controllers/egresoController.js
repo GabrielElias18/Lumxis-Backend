@@ -2,18 +2,17 @@
 // 📁 CONTROLADOR DE EGRESOS (Entradas al inventario)
 // ======================================================
 
-const Egreso = require('../models/egresoModel');
-const Producto = require('../models/productModel');
-
 // ===============================================
 // ➕ Registrar un nuevo egreso
 // ===============================================
 const createEgreso = async (req, res) => {
   try {
     const { productoNombre, cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
 
-    // 🔍 Buscar el producto al que se le hará el egreso
+    const Egreso = req.db.Egreso;
+    const Producto = req.db.Product;
+
     const producto = await Producto.findOne({
       where: { nombre: productoNombre, usuarioid }
     });
@@ -22,11 +21,9 @@ const createEgreso = async (req, res) => {
       return res.status(404).json({ mensaje: 'Producto no encontrado' });
     }
 
-    // 💰 Obtener el precio de compra para calcular el total del egreso
     const precioCompra = producto.precioCompra;
     const total = cantidad * precioCompra;
 
-    // 🏗️ Crear el egreso en la base de datos
     const nuevoEgreso = await Egreso.create({
       productoNombre,
       cantidad,
@@ -36,7 +33,6 @@ const createEgreso = async (req, res) => {
       usuarioid
     });
 
-    // 📦 Aumentar el stock del producto
     await producto.update({
       cantidadDisponible: producto.cantidadDisponible + cantidad
     });
@@ -56,7 +52,8 @@ const createEgreso = async (req, res) => {
 // ===============================================
 const getEgresos = async (req, res) => {
   try {
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const { Egreso } = req.db;
 
     const egresos = await Egreso.findAll({
       where: { usuarioid },
@@ -80,9 +77,11 @@ const updateEgreso = async (req, res) => {
   try {
     const { id } = req.params;
     const { cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
 
-    // 🔍 Buscar el egreso actual
+    const Egreso = req.db.Egreso;
+    const Producto = req.db.Product;
+
     const egreso = await Egreso.findOne({
       where: { egresoid: id, usuarioid }
     });
@@ -91,7 +90,6 @@ const updateEgreso = async (req, res) => {
       return res.status(404).json({ mensaje: 'Egreso no encontrado' });
     }
 
-    // 🔍 Buscar el producto relacionado al egreso
     const producto = await Producto.findOne({
       where: { nombre: egreso.productoNombre, usuarioid }
     });
@@ -100,16 +98,13 @@ const updateEgreso = async (req, res) => {
       return res.status(404).json({ mensaje: 'Producto no encontrado' });
     }
 
-    // 📦 Ajustar el stock con la diferencia entre la nueva cantidad y la anterior
     const diferenciaCantidad = cantidad - egreso.cantidad;
     await producto.update({
       cantidadDisponible: producto.cantidadDisponible + diferenciaCantidad
     });
 
-    // 💰 Recalcular total
     const nuevoTotal = cantidad * producto.precioCompra;
 
-    // ✏️ Actualizar el egreso
     await egreso.update({
       cantidad,
       total: nuevoTotal,
@@ -132,9 +127,11 @@ const updateEgreso = async (req, res) => {
 const deleteEgreso = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
 
-    // 🔍 Buscar el egreso a eliminar
+    const Egreso = req.db.Egreso;
+    const Producto = req.db.Product;
+
     const egreso = await Egreso.findOne({
       where: { egresoid: id, usuarioid }
     });
@@ -143,19 +140,16 @@ const deleteEgreso = async (req, res) => {
       return res.status(404).json({ mensaje: 'Egreso no encontrado' });
     }
 
-    // 🔍 Buscar el producto relacionado
     const producto = await Producto.findOne({
       where: { nombre: egreso.productoNombre, usuarioid }
     });
 
     if (producto) {
-      // 📉 Revertir el aumento del stock si se elimina el egreso
       await producto.update({
         cantidadDisponible: producto.cantidadDisponible - egreso.cantidad
       });
     }
 
-    // 🧹 Eliminar el egreso
     await egreso.destroy();
 
     res.json({ mensaje: 'Egreso eliminado correctamente' });
@@ -168,9 +162,6 @@ const deleteEgreso = async (req, res) => {
   }
 };
 
-// ===============================================
-// 📤 Exportar funciones del controlador
-// ===============================================
 module.exports = {
   createEgreso,
   getEgresos,

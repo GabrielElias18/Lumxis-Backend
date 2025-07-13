@@ -1,10 +1,12 @@
-const Producto = require('../models/productModel');
-const Categoria = require('../models/categoryModel');
+// ========================================================
+// 📂 CONTROLADOR DE PRODUCTOS CON MULTI-TENANT
+// ========================================================
+
 const cloudinary = require('../config/cloudinary');
 const { Readable } = require('stream');
 
 // ========================================================
-// Función utilitaria para subir imagen a Cloudinary desde buffer
+// 📤 Función utilitaria para subir imagen a Cloudinary
 // ========================================================
 const subirACloudinary = (buffer) => {
   return new Promise((resolve, reject) => {
@@ -22,7 +24,7 @@ const subirACloudinary = (buffer) => {
 };
 
 // ========================================================
-// ➕ Crear un nuevo producto con imágenes
+// ➕ Crear un nuevo producto
 // ========================================================
 const createProduct = async (req, res) => {
   try {
@@ -36,25 +38,21 @@ const createProduct = async (req, res) => {
       categoriaid
     } = req.body;
 
-    const usuarioId = req.usuario.usuarioId;
-
-    if (!usuarioId) {
-      return res.status(400).json({ mensaje: 'Usuario no autenticado.' });
-    }
+    const usuarioId = req.usuario.usuarioid;
+    const { Product, Category } = req.db;
 
     if (!categoriaNombre && !categoriaid) {
       return res.status(400).json({ mensaje: 'Debes proporcionar el nombre o el ID de la categoría.' });
     }
 
     const categoria = categoriaid
-      ? await Categoria.findOne({ where: { categoriaid, usuarioid: usuarioId } })
-      : await Categoria.findOne({ where: { nombre: categoriaNombre, usuarioid: usuarioId } });
+      ? await Category.findOne({ where: { categoriaid, usuarioid: usuarioId } })
+      : await Category.findOne({ where: { nombre: categoriaNombre, usuarioid: usuarioId } });
 
     if (!categoria) {
       return res.status(400).json({ mensaje: 'La categoría no existe o no pertenece al usuario.' });
     }
 
-    // 📸 Subida de imágenes sin duplicados
     const imagenes = [];
     if (req.files && Array.isArray(req.files)) {
       const buffersUnicos = new Set();
@@ -68,13 +66,12 @@ const createProduct = async (req, res) => {
       }
     }
 
-    // 🧱 Crear producto
-    const nuevoProducto = await Producto.create({
+    const nuevoProducto = await Product.create({
       nombre,
       descripcion,
-      cantidad_disponible: parseInt(cantidadDisponible) || 0,
-      precio_compra: parseFloat(precioCompra),
-      precio_venta: parseFloat(precioVenta),
+      cantidadDisponible: parseInt(cantidadDisponible) || 0,
+      precioCompra: parseFloat(precioCompra),
+      precioVenta: parseFloat(precioVenta),
       imagenes,
       categoria_nombre: categoria.nombre,
       categoriaid: categoria.categoriaid,
@@ -85,7 +82,6 @@ const createProduct = async (req, res) => {
       mensaje: 'Producto creado exitosamente.',
       producto: nuevoProducto
     });
-
   } catch (error) {
     console.error('❌ Error al crear producto:', error);
     res.status(500).json({ mensaje: 'Error al crear el producto.', error: error.message });
@@ -93,55 +89,47 @@ const createProduct = async (req, res) => {
 };
 
 // ========================================================
+// 📄 Obtener todos los productos del usuario
+// ========================================================
 const getAllProducts = async (req, res) => {
   try {
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const { Product } = req.db;
 
-    const productos = await Producto.findAll({
-      where: { usuarioid }
-    });
+    const productos = await Product.findAll({ where: { usuarioid } });
 
-    const productosConImagenes = productos.map(producto => ({
-      ...producto.toJSON(),
-      imagenes: producto.imagenes
-        ? producto.imagenes.map(img => `http://localhost:3000${img}`)
-        : []
-    }));
-
-    res.status(200).json(productosConImagenes);
-
+    res.status(200).json(productos);
   } catch (error) {
     console.error('❌ Error al obtener productos:', error);
     res.status(500).json({ mensaje: 'Error al obtener los productos.', error: error.message });
   }
 };
 
+// ========================================================
+// 🔍 Obtener un producto por ID
+// ========================================================
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuarioId = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const { Product } = req.db;
 
-    const producto = await Producto.findOne({
-      where: { productoid: id, usuarioid: usuarioId }
-    });
+    const producto = await Product.findOne({ where: { productoid: id, usuarioid } });
 
     if (!producto) {
       return res.status(404).json({ mensaje: 'Producto no encontrado o no pertenece al usuario.' });
     }
 
-    res.status(200).json({
-      ...producto.toJSON(),
-      imagenes: producto.imagenes
-        ? producto.imagenes.map(img => `http://localhost:3000${img}`)
-        : []
-    });
-
+    res.status(200).json(producto);
   } catch (error) {
     console.error('❌ Error al obtener producto:', error);
     res.status(500).json({ mensaje: 'Error al obtener el producto.', error: error.message });
   }
 };
 
+// ========================================================
+// ✏️ Actualizar un producto por ID
+// ========================================================
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -155,20 +143,18 @@ const updateProduct = async (req, res) => {
       categoria_nombre
     } = req.body;
 
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const { Product, Category } = req.db;
 
-    const producto = await Producto.findOne({
-      where: { productoid: id, usuarioid }
-    });
+    const producto = await Product.findOne({ where: { productoid: id, usuarioid } });
 
     if (!producto) {
       return res.status(404).json({ mensaje: 'Producto no encontrado o no pertenece al usuario.' });
     }
 
     let nombreCategoria = categoria_nombre;
-
     if (!nombreCategoria && categoriaid) {
-      const categoria = await Categoria.findByPk(categoriaid);
+      const categoria = await Category.findByPk(categoriaid);
       if (categoria) nombreCategoria = categoria.nombre;
     }
 
@@ -179,9 +165,9 @@ const updateProduct = async (req, res) => {
     await producto.update({
       nombre: nombre || producto.nombre,
       descripcion: descripcion || producto.descripcion,
-      cantidad_disponible: cantidadDisponible !== undefined ? parseInt(cantidadDisponible) : producto.cantidad_disponible,
-      precio_compra: precioCompra !== undefined ? parseFloat(precioCompra) : producto.precio_compra,
-      precio_venta: precioVenta !== undefined ? parseFloat(precioVenta) : producto.precio_venta,
+      cantidadDisponible: cantidadDisponible !== undefined ? parseInt(cantidadDisponible) : producto.cantidadDisponible,
+      precioCompra: precioCompra !== undefined ? parseFloat(precioCompra) : producto.precioCompra,
+      precioVenta: precioVenta !== undefined ? parseFloat(precioVenta) : producto.precioVenta,
       categoriaid: categoriaid || producto.categoriaid,
       categoria_nombre: nombreCategoria,
       imagenes: nuevasImagenes
@@ -191,28 +177,28 @@ const updateProduct = async (req, res) => {
       mensaje: 'Producto actualizado exitosamente.',
       producto
     });
-
   } catch (error) {
     console.error('❌ Error al actualizar producto:', error);
     res.status(500).json({ mensaje: 'Error al actualizar el producto.', error: error.message });
   }
 };
 
+// ========================================================
+// 🗑️ Eliminar producto por ID
+// ========================================================
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuarioid = req.usuario.usuarioId;
+    const usuarioid = req.usuario.usuarioid;
+    const { Product } = req.db;
 
-    const resultado = await Producto.destroy({
-      where: { productoid: id, usuarioid }
-    });
+    const resultado = await Product.destroy({ where: { productoid: id, usuarioid } });
 
     if (!resultado) {
       return res.status(404).json({ mensaje: 'Producto no encontrado o no pertenece al usuario.' });
     }
 
     res.status(200).json({ mensaje: 'Producto eliminado exitosamente.' });
-
   } catch (error) {
     console.error('❌ Error al eliminar producto:', error);
     res.status(500).json({ mensaje: 'Error al eliminar el producto.', error: error.message });

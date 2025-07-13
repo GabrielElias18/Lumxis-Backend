@@ -1,0 +1,31 @@
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvaWQiOjEsImNvcnJlbyI6Imd2YWxkZWxhbWFyMjAwM0BnbWFpbC5jb20iLCJwcmltZXJOb21icmUiOiJHYWJyaWVsIiwic2VndW5kb05vbWJyZSI6IkdhYnJpZWwiLCJwcmltZXJBcGVsbGlkbyI6IlZhbGRlbGFtYXIiLCJzZWd1bmRvQXBlbGxpZG8iOiJWYWxkZWxhbWFyIiwidGVsZWZvbm8iOiIxMjMiLCJyb2wiOiJ2ZW5kZWRvciIsInRlbmFudF9kYiI6ImRiX2dhYnJpZWxfdmFsZGVsYW1hciIsImlhdCI6MTc1MjQyOTU2NywiZXhwIjoxNzUyNDMzMTY3fQ.WY4e3YRbDISNYSd6ivKvT4EErV2ZFg0YFYPPGy0lzG4
+
+### ➕ Crear nuevo egreso 
+POST {{baseUrl}}/api/egresos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productoNombre": "Manzana",
+  "cantidad": 10,
+  "descripcion": "Venta de café en mostrador"
+}
+
+### 📄 Obtener todos los egresos del usuario
+GET {{baseUrl}}/api/egresos
+Authorization: Bearer {{token}}
+
+### ✏️ Actualizar egreso por ID
+PUT {{baseUrl}}/api/egresos/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cantidad": 10,
+  "descripcion": "Se corrigió la cantidad vendida"
+}
+
+### 🗑️ Eliminar un egreso por ID
+DELETE {{baseUrl}}/api/egresos/1
+Authorization: Bearer {{token}}
