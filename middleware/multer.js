@@ -9,16 +9,13 @@ const path = require('path');
 // 🛡️ FILTRO DE ARCHIVOS PERMITIDOS (solo imágenes)
 // ============================================
 const fileFilter = (req, file, cb) => {
-  const fileTypes = /jpeg|jpg|png|gif/;
-  const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = fileTypes.test(file.mimetype);
-
-  if (extname && mimetype) {
+  if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
     cb(new Error('Solo se permiten imágenes'), false);
   }
 };
+
 
 // ============================================
 // 🧠 USAR ALMACENAMIENTO EN MEMORIA

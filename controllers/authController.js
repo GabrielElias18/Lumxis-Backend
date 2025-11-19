@@ -94,17 +94,13 @@ const registerUser = async (req, res) => {
     // 🧩 Cargar y sincronizar modelos
     const defineCategoriaModel = require('../models/categoryModel');
     const defineProductoModel = require('../models/productModel');
-    // const defineClienteModel = require('../models/clientModel');
-    // const defineProveedorModel = require('../models/proveedorModel');
     const defineVentaModel = require('../models/ventaModel');
     const defineEgresoModel = require('../models/egresoModel');
 
     const Categoria = defineCategoriaModel(nuevaConexion, Sequelize.DataTypes);
     const Producto = defineProductoModel(nuevaConexion, Sequelize.DataTypes);
-    // const Cliente = defineClienteModel(nuevaConexion, Sequelize.DataTypes);
-    // const Proveedor = defineProveedorModel(nuevaConexion, Sequelize.DataTypes);
-    Venta = defineVentaModel(nuevaConexion, Sequelize.DataTypes);
-    Egreso = defineEgresoModel(nuevaConexion, Sequelize.DataTypes);
+    const Venta = defineVentaModel(nuevaConexion, Sequelize.DataTypes);
+    const Egreso = defineEgresoModel(nuevaConexion, Sequelize.DataTypes);
 
     await nuevaConexion.sync();
 
