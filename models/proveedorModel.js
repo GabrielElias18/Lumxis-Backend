@@ -74,9 +74,17 @@ const Proveedor = sequelize.define('Proveedor',{
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Usuario,
+      model: 'usuarios',
       key: 'usuarioid',
     },
+  },
+  negocioid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'negocios',
+      key: 'negocioid'
+    }
   }
 
 }, {

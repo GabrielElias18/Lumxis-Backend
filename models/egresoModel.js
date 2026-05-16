@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // Asegúrate de tener la conexión a la BD
-const Usuario = require('./userModel'); // Importar modelo de usuario
+const sequelize = require('../config/database');
+const Usuario = require('./userModel');
 
 const Egreso = sequelize.define('Egreso', {
   egresoid: {
@@ -8,22 +8,10 @@ const Egreso = sequelize.define('Egreso', {
     autoIncrement: true,
     primaryKey: true
   },
-  productoNombre: {
-    type: DataTypes.STRING(100),
-    allowNull: false
-  },
-  cantidad: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    validate: { min: 1 }
-  },
-  precioCompra: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
-  },
   total: {
     type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
+    allowNull: false,
+    defaultValue: 0.00
   },
   descripcion: {
     type: DataTypes.TEXT,
@@ -32,7 +20,17 @@ const Egreso = sequelize.define('Egreso', {
   usuarioid: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: { model: Usuario, key: 'usuarioid' }
+    references: { model: 'usuarios', key: 'usuarioid' }
+  },
+  negocioid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'negocios', key: 'negocioid' }
+  },
+  proveedorid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'proveedor', key: 'proveedorid' }
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -42,5 +40,14 @@ const Egreso = sequelize.define('Egreso', {
   tableName: 'egresos',
   timestamps: false
 });
+
+// Asociaciones
+Egreso.belongsTo(Usuario, { foreignKey: 'usuarioid' });
+Egreso.belongsTo(require('./proveedorModel'), { foreignKey: 'proveedorid', as: 'proveedor' });
+
+// Relación con Detalle
+const EgresoDetalle = require('./egresoDetalleModel');
+Egreso.hasMany(EgresoDetalle, { foreignKey: 'egresoid', as: 'detalles' });
+EgresoDetalle.belongsTo(Egreso, { foreignKey: 'egresoid' });
 
 module.exports = Egreso;

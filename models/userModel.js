@@ -43,15 +43,26 @@ const Usuario = sequelize.define('Usuario', {
     allowNull: false,
     validate: { notEmpty: true, len: [6, 255] }
   },
-  rol: { // Nuevo campo para el rol
+  rol: { 
     type: DataTypes.ENUM('vendedor', 'administrador'),
     allowNull: false,
-    defaultValue: 'vendedor' // Por defecto, será vendedor
+    defaultValue: 'vendedor' 
+  },
+  negocioid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'negocios',
+      key: 'negocioid'
+    }
   }
 }, {
   tableName: 'usuarios',
   timestamps: false,
   underscored: true,
 });
+
+const Negocio = require('./negocioModel');
+Usuario.belongsTo(Negocio, { foreignKey: 'negocioid', as: 'negocio' });
 
 module.exports = Usuario;

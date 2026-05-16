@@ -33,21 +33,8 @@ const verificarToken = (req, res, next) => {
   }
 };
 
-// ===========================================
-// 🔒 Middleware: verificar si el usuario tiene rol de administrador
-// ===========================================
-const verificarAdministrador = (req, res, next) => {
-  // Si no existe un usuario autenticado o su rol no es "administrador"
-  if (!req.usuario || req.usuario.rol !== 'administrador') {
-    return res.status(403).json({ mensaje: 'Acceso denegado. Se requieren permisos de administrador.' });
-  }
-
-  // Si el usuario es administrador, permitir el acceso
-  next();
-};
 
 // Exportamos los middlewares para usarlos en rutas protegidas
 module.exports = {
-  verificarToken,
-  verificarAdministrador
+  verificarToken
 };

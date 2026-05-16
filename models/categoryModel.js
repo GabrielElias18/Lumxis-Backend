@@ -30,6 +30,14 @@ const Categoria = sequelize.define('Categoria', {
       key: 'usuarioid'
     }
   },
+  negocioid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'negocios',
+      key: 'negocioid'
+    }
+  },
   createdat: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW

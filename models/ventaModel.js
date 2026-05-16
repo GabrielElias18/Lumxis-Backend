@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // Asegúrate de tener la configuración de Sequelize
-const Usuario = require('./userModel'); // Importa el modelo de Usuario si lo tienes
+const sequelize = require('../config/database');
+const Usuario = require('./userModel');
 
 const Venta = sequelize.define('Venta', {
   ventaid: {
@@ -8,24 +8,10 @@ const Venta = sequelize.define('Venta', {
     primaryKey: true,
     autoIncrement: true
   },
-  productoNombre: {
-    type: DataTypes.STRING(100),
-    allowNull: false
-  },
-  cantidad: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    validate: {
-      min: 1 // Asegura que la cantidad sea mayor a 0
-    }
-  },
-  precioVenta: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
-  },
   total: {
     type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
+    allowNull: false,
+    defaultValue: 0.00
   },
   descripcion: {
     type: DataTypes.TEXT,
@@ -35,10 +21,26 @@ const Venta = sequelize.define('Venta', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Usuario,
+      model: 'usuarios',
       key: 'usuarioid'
     },
     onDelete: 'CASCADE'
+  },
+  negocioid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'negocios',
+      key: 'negocioid'
+    }
+  },
+  clienteid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'clientes',
+      key: 'clienteid'
+    }
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -46,10 +48,16 @@ const Venta = sequelize.define('Venta', {
   }
 }, {
   tableName: 'ventas',
-  timestamps: false // Ya tenemos createdAt manualmente
+  timestamps: false
 });
 
-// Asociación con Usuario
+// Asociaciones
 Venta.belongsTo(Usuario, { foreignKey: 'usuarioid' });
+Venta.belongsTo(require('./clientModel'), { foreignKey: 'clienteid', as: 'cliente' });
+
+// Relación con Detalle
+const VentaDetalle = require('./ventaDetalleModel');
+Venta.hasMany(VentaDetalle, { foreignKey: 'ventaid', as: 'detalles' });
+VentaDetalle.belongsTo(Venta, { foreignKey: 'ventaid', as: 'venta' });
 
 module.exports = Venta;

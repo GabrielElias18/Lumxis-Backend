@@ -3,6 +3,7 @@
 // ======================================================
 
 const Categoria = require('../models/categoryModel');
+const sequelize = require('../config/database');
 
 // ===============================================
 // ➕ Crear una nueva categoría
@@ -10,66 +11,61 @@ const Categoria = require('../models/categoryModel');
 const createCategory = async (req, res) => {
   try {
     const { nombre, descripcion } = req.body;
-    const usuarioId = req.usuario.usuarioId; // ID del usuario autenticado
+    const { usuarioid, negocioid } = req.usuario;
 
-    if (!usuarioId) {
-      return res.status(400).json({ mensaje: 'Usuario no autenticado.' });
-    }
-
-    // 🔍 Verificar si ya existe una categoría con el mismo nombre para este usuario
+    // 🔍 Verificar si ya existe una categoría con el mismo nombre para este NEGOCIO
     const categoriaExistente = await Categoria.findOne({
-      where: {
-        nombre,
-        usuarioid: usuarioId
-      }
+      where: { nombre, negocioid: negocioid }
     });
 
     if (categoriaExistente) {
       return res.status(400).json({ mensaje: 'Ya existe una categoría con este nombre.' });
     }
 
-    // 🏗️ Crear la nueva categoría
     const nuevaCategoria = await Categoria.create({
       nombre,
       descripcion,
-      usuarioid: usuarioId
+      usuarioid,
+      negocioid
     });
 
-    res.status(201).json({
-      mensaje: 'Categoría creada exitosamente.',
-      categoria: nuevaCategoria
-    });
+    res.status(201).json({ mensaje: 'Categoría creada exitosamente.', categoria: nuevaCategoria });
 
   } catch (error) {
     console.error('❌ Error al crear categoría:', error);
-    res.status(500).json({
-      mensaje: 'Error al crear la categoría.',
-      error: error.message
-    });
+    res.status(500).json({ mensaje: 'Error al crear la categoría.', error: error.message });
   }
 };
 
 // ===============================================
-// 📄 Obtener todas las categorías de un usuario
+// 📄 Obtener todas las categorías del NEGOCIO
 // ===============================================
 const getCategoriesByUser = async (req, res) => {
   try {
-    const usuarioId = req.usuario.usuarioId;
+    const { negocioid } = req.usuario;
 
-    // 🔍 Obtener todas las categorías del usuario autenticado, ordenadas por fecha de creación
     const categorias = await Categoria.findAll({
-      where: { usuarioid: usuarioId },
+      where: { negocioid },
+      attributes: {
+        include: [
+          [
+            sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM productos AS p
+              WHERE p.categoriaid = "Categoria".categoriaid
+            )`),
+            'totalProductos'
+          ]
+        ]
+      },
       order: [['createdat', 'DESC']]
     });
 
-    res.status(200).json({ categorias });
+    res.status(200).json(categorias); // Simplificado para devolver el array directamente
 
   } catch (error) {
     console.error('❌ Error al obtener categorías:', error);
-    res.status(500).json({
-      mensaje: 'Error al obtener las categorías.',
-      error: error.message
-    });
+    res.status(500).json({ mensaje: 'Error al obtener las categorías.', error: error.message });
   }
 };
 
@@ -79,37 +75,26 @@ const getCategoriesByUser = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
+    const { negocioid } = req.usuario;
     const { nombre, descripcion } = req.body;
-    const usuarioId = req.usuario.usuarioId;
 
-    // 🔍 Buscar la categoría por ID (sin validar usuario, puedes añadir si lo deseas)
     const categoria = await Categoria.findOne({
-      where: { categoriaid: id }
+      where: { categoriaid: id, negocioid }
     });
 
     if (!categoria) {
-      return res.status(404).json({
-        mensaje: 'Categoría no encontrada o no pertenece al usuario.'
-      });
+      return res.status(404).json({ mensaje: 'Categoría no encontrada.' });
     }
 
-    // ✏️ Actualizar nombre y descripción si se enviaron nuevos valores
     await categoria.update({
       nombre: nombre || categoria.nombre,
       descripcion: descripcion || categoria.descripcion
     });
 
-    res.status(200).json({
-      mensaje: 'Categoría actualizada exitosamente.',
-      categoria
-    });
+    res.status(200).json({ mensaje: 'Categoría actualizada exitosamente.', categoria });
 
   } catch (error) {
-    console.error('❌ Error al actualizar categoría:', error);
-    res.status(500).json({
-      mensaje: 'Error al actualizar la categoría.',
-      error: error.message
-    });
+    res.status(500).json({ mensaje: 'Error al actualizar la categoría.', error: error.message });
   }
 };
 
@@ -119,33 +104,23 @@ const updateCategory = async (req, res) => {
 const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuarioId = req.usuario.usuarioId;
+    const { negocioid } = req.usuario;
 
-    // 🔍 Eliminar la categoría por ID (sin validar usuario, puedes añadir si lo deseas)
     const resultado = await Categoria.destroy({
-      where: { categoriaid: id }
+      where: { categoriaid: id, negocioid }
     });
 
     if (!resultado) {
-      return res.status(404).json({
-        mensaje: 'Categoría no encontrada o no pertenece al usuario.'
-      });
+      return res.status(404).json({ mensaje: 'Categoría no encontrada.' });
     }
 
     res.status(200).json({ mensaje: 'Categoría eliminada exitosamente.' });
 
   } catch (error) {
-    console.error('❌ Error al eliminar categoría:', error);
-    res.status(500).json({
-      mensaje: 'Error al eliminar la categoría.',
-      error: error.message
-    });
+    res.status(500).json({ mensaje: 'Error al eliminar la categoría.', error: error.message });
   }
 };
 
-// ======================================================
-// 📤 Exportar funciones del controlador
-// ======================================================
 module.exports = {
   createCategory,
   getCategoriesByUser,

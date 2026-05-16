@@ -33,9 +33,17 @@ const Cliente = sequelize.define('Cliente',{
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Usuario,
-      key: 'usuarioId',
+      model: 'usuarios',
+      key: 'usuarioid',
     },
+  },
+  negocioid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'negocios',
+      key: 'negocioid'
+    }
   }
 
 }, {

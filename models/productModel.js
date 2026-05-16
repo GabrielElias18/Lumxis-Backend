@@ -41,16 +41,24 @@ const Producto = sequelize.define('Producto', {
     allowNull: false,
     references: {
       model: Categoria,
-      key: 'categoriaId',
+      key: 'categoriaid',
     },
   },
   usuarioid: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Usuario,
-      key: 'usuarioId',
+      model: 'usuarios',
+      key: 'usuarioid',
     },
+  },
+  negocioid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'negocios',
+      key: 'negocioid'
+    }
   },
   createdat: {
     type: DataTypes.DATE,

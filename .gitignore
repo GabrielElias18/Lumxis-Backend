@@ -1,3 +1,8 @@
+# Variables de entorno (nunca subir al repositorio)
+.env
+.env.production
+.env.staging
+
 # Logs
 logs
 *.log

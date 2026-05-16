@@ -1,179 +1,191 @@
-// ======================================================
-// 📁 CONTROLADOR DE EGRESOS (Entradas al inventario)
-// ======================================================
-
 const Egreso = require('../models/egresoModel');
+const EgresoDetalle = require('../models/egresoDetalleModel');
 const Producto = require('../models/productModel');
+const sequelize = require('../config/database');
 
-// ===============================================
-// ➕ Registrar un nuevo egreso
-// ===============================================
+// ========================================================
+// ➕ Crear Egreso (Soporta uno o muchos productos)
+// ========================================================
 const createEgreso = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
-    const { productoNombre, cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const { proveedorid, descripcion, items } = req.body;
+    const { usuarioid, negocioid } = req.usuario;
 
-    // 🔍 Buscar el producto al que se le hará el egreso
-    const producto = await Producto.findOne({
-      where: { nombre: productoNombre, usuarioid }
-    });
-
-    if (!producto) {
-      return res.status(404).json({ mensaje: 'Producto no encontrado' });
+    let productosAProcesar = Array.isArray(items) ? items : [];
+    if (productosAProcesar.length === 0) {
+      await t.rollback();
+      return res.status(400).json({ mensaje: 'Debe incluir al menos un producto' });
     }
 
-    // 💰 Obtener el precio de compra para calcular el total del egreso
-    const precioCompra = producto.precioCompra;
-    const total = cantidad * precioCompra;
-
-    // 🏗️ Crear el egreso en la base de datos
     const nuevoEgreso = await Egreso.create({
-      productoNombre,
-      cantidad,
-      precioCompra,
-      total,
-      descripcion,
-      usuarioid
+      usuarioid,
+      negocioid,
+      proveedorid: proveedorid || null,
+      descripcion: descripcion || '',
+      total: 0
+    }, { transaction: t });
+
+    let totalEgreso = 0;
+
+    for (const item of productosAProcesar) {
+      const { productoNombre, cantidad } = item;
+
+      const producto = await Producto.findOne({
+        where: { nombre: productoNombre, negocioid },
+        transaction: t,
+        lock: true
+      });
+
+      if (!producto) {
+        throw new Error(`Producto no encontrado: ${productoNombre}`);
+      }
+
+      const subtotal = cantidad * producto.precioCompra;
+      totalEgreso += subtotal;
+
+      await EgresoDetalle.create({
+        egresoid: nuevoEgreso.egresoid,
+        productoNombre,
+        cantidad,
+        precioUnitario: producto.precioCompra,
+        subtotal,
+        categoriaid: producto.categoriaid
+      }, { transaction: t });
+
+      await producto.update({
+        cantidadDisponible: producto.cantidadDisponible + cantidad
+      }, { transaction: t });
+    }
+
+    await nuevoEgreso.update({ total: totalEgreso }, { transaction: t });
+    await t.commit();
+
+    const egresoCompleto = await Egreso.findByPk(nuevoEgreso.egresoid, {
+      include: [
+        { model: EgresoDetalle, as: 'detalles' }, 
+        { model: require('../models/proveedorModel'), as: 'proveedor', attributes: ['nombreProveedor'] }
+      ]
     });
 
-    // 📦 Aumentar el stock del producto
-    await producto.update({
-      cantidadDisponible: producto.cantidadDisponible + cantidad
-    });
-
-    res.status(201).json(nuevoEgreso);
-
+    res.status(201).json(egresoCompleto);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al registrar el egreso',
-      error: error.message
-    });
+    await t.rollback();
+    res.status(500).json({ mensaje: 'Error al registrar el egreso', error: error.message });
   }
 };
 
-// ===============================================
-// 📄 Obtener todos los egresos de un usuario
-// ===============================================
+// ========================================================
+// 🔍 Obtener todos los egresos del NEGOCIO
+// ========================================================
 const getEgresos = async (req, res) => {
   try {
-    const usuarioid = req.usuario.usuarioId;
-
+    const { negocioid } = req.usuario;
     const egresos = await Egreso.findAll({
-      where: { usuarioid },
+      where: { negocioid },
+      include: [
+        { model: EgresoDetalle, as: 'detalles' },
+        { model: require('../models/proveedorModel'), as: 'proveedor', attributes: ['nombreProveedor'] }
+      ],
       order: [['createdAt', 'DESC']]
     });
-
     res.json(egresos);
-
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al obtener los egresos',
-      error: error.message
-    });
+    res.status(500).json({ mensaje: 'Error al obtener los egresos', error: error.message });
   }
 };
 
-// ===============================================
-// ✏️ Editar un egreso
-// ===============================================
+// ========================================================
+// 🔍 Obtener un egreso por ID
+// ========================================================
+const getEgresoById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { negocioid } = req.usuario;
+
+    const egreso = await Egreso.findOne({
+      where: { egresoid: id, negocioid },
+      include: [
+        { model: EgresoDetalle, as: 'detalles' },
+        { model: require('../models/proveedorModel'), as: 'proveedor', attributes: ['nombreProveedor'] }
+      ]
+    });
+
+    if (!egreso) return res.status(404).json({ mensaje: 'Egreso no encontrada' });
+    res.json(egreso);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener el egreso', error: error.message });
+  }
+};
+
+// ========================================================
+// ✏️ Actualizar Egreso (PATCH)
+// ========================================================
 const updateEgreso = async (req, res) => {
   try {
     const { id } = req.params;
-    const { cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const { negocioid } = req.usuario;
+    const { descripcion, proveedorid } = req.body;
 
-    // 🔍 Buscar el egreso actual
-    const egreso = await Egreso.findOne({
-      where: { egresoid: id, usuarioid }
-    });
+    const egreso = await Egreso.findOne({ where: { egresoid: id, negocioid } });
+    if (!egreso) return res.status(404).json({ mensaje: 'Egreso no encontrado' });
 
-    if (!egreso) {
-      return res.status(404).json({ mensaje: 'Egreso no encontrado' });
-    }
-
-    // 🔍 Buscar el producto relacionado al egreso
-    const producto = await Producto.findOne({
-      where: { nombre: egreso.productoNombre, usuarioid }
-    });
-
-    if (!producto) {
-      return res.status(404).json({ mensaje: 'Producto no encontrado' });
-    }
-
-    // 📦 Ajustar el stock con la diferencia entre la nueva cantidad y la anterior
-    const diferenciaCantidad = cantidad - egreso.cantidad;
-    await producto.update({
-      cantidadDisponible: producto.cantidadDisponible + diferenciaCantidad
-    });
-
-    // 💰 Recalcular total
-    const nuevoTotal = cantidad * producto.precioCompra;
-
-    // ✏️ Actualizar el egreso
     await egreso.update({
-      cantidad,
-      total: nuevoTotal,
-      descripcion
+      descripcion: descripcion !== undefined ? descripcion : egreso.descripcion,
+      proveedorid: proveedorid !== undefined ? proveedorid : egreso.proveedorid
     });
 
     res.json(egreso);
-
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al actualizar el egreso',
-      error: error.message
-    });
+    res.status(500).json({ mensaje: 'Error al actualizar el egreso', error: error.message });
   }
 };
 
-// ===============================================
-// 🗑️ Eliminar un egreso
-// ===============================================
+// ========================================================
+// 🗑️ Eliminar Egreso (Revierte Stock)
+// ========================================================
 const deleteEgreso = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const usuarioid = req.usuario.usuarioId;
+    const { negocioid } = req.usuario;
 
-    // 🔍 Buscar el egreso a eliminar
     const egreso = await Egreso.findOne({
-      where: { egresoid: id, usuarioid }
+      where: { egresoid: id, negocioid },
+      include: [{ model: EgresoDetalle, as: 'detalles' }],
+      transaction: t
     });
 
     if (!egreso) {
+      await t.rollback();
       return res.status(404).json({ mensaje: 'Egreso no encontrado' });
     }
 
-    // 🔍 Buscar el producto relacionado
-    const producto = await Producto.findOne({
-      where: { nombre: egreso.productoNombre, usuarioid }
-    });
-
-    if (producto) {
-      // 📉 Revertir el aumento del stock si se elimina el egreso
-      await producto.update({
-        cantidadDisponible: producto.cantidadDisponible - egreso.cantidad
+    for (const detalle of egreso.detalles) {
+      const producto = await Producto.findOne({
+        where: { nombre: detalle.productoNombre, negocioid },
+        transaction: t
       });
+      if (producto) {
+        await producto.update({
+          cantidadDisponible: producto.cantidadDisponible - detalle.cantidad
+        }, { transaction: t });
+      }
     }
 
-    // 🧹 Eliminar el egreso
-    await egreso.destroy();
-
-    res.json({ mensaje: 'Egreso eliminado correctamente' });
-
+    await egreso.destroy({ transaction: t });
+    await t.commit();
+    res.json({ mensaje: 'Egreso eliminado y stock revertido' });
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al eliminar el egreso',
-      error: error.message
-    });
+    await t.rollback();
+    res.status(500).json({ mensaje: 'Error al eliminar el egreso', error: error.message });
   }
 };
 
-// ===============================================
-// 📤 Exportar funciones del controlador
-// ===============================================
 module.exports = {
   createEgreso,
   getEgresos,
+  getEgresoById,
   updateEgreso,
   deleteEgreso
 };

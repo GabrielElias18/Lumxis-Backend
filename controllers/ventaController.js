@@ -1,58 +1,98 @@
 const Venta = require('../models/ventaModel');
+const VentaDetalle = require('../models/ventaDetalleModel');
 const Producto = require('../models/productModel');
+const sequelize = require('../config/database');
 
 // ========================================================
-// ➕ Registrar una venta
+// ➕ Crear Venta (Soporta uno o muchos productos)
 // ========================================================
 const createVenta = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
-    const { productoNombre, cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const { clienteid, descripcion, items } = req.body;
+    const { usuarioid, negocioid } = req.usuario;
 
-    // 🔍 Buscar el producto por nombre y usuario
-    const producto = await Producto.findOne({ where: { nombre: productoNombre, usuarioid } });
-    if (!producto) return res.status(404).json({ mensaje: 'Producto no encontrado' });
-
-    // 🛡️ Verificar stock disponible
-    if (producto.cantidadDisponible < cantidad) {
-      return res.status(400).json({ mensaje: 'Stock insuficiente' });
+    let productosAProcesar = Array.isArray(items) ? items : [];
+    if (productosAProcesar.length === 0) {
+      await t.rollback();
+      return res.status(400).json({ mensaje: 'Debe incluir al menos un producto' });
     }
 
-    // 💰 Calcular total de la venta
-    const total = cantidad * producto.precioVenta;
-
-    // 🧾 Crear la venta
     const nuevaVenta = await Venta.create({
-      productoNombre,
-      cantidad,
-      precioVenta: producto.precioVenta,
-      total,
-      descripcion,
-      usuarioid
+      usuarioid,
+      negocioid,
+      clienteid: clienteid || null,
+      descripcion: descripcion || '',
+      total: 0 
+    }, { transaction: t });
+
+    let totalVenta = 0;
+
+    for (const item of productosAProcesar) {
+      const { productoNombre, cantidad } = item;
+
+      const producto = await Producto.findOne({
+        where: { nombre: productoNombre, negocioid },
+        transaction: t,
+        lock: true
+      });
+
+      if (!producto) {
+        throw new Error(`Producto no encontrado: ${productoNombre}`);
+      }
+
+      if (producto.cantidadDisponible < cantidad) {
+        throw new Error(`Stock insuficiente para ${productoNombre}.`);
+      }
+
+      const subtotal = cantidad * producto.precioVenta;
+      totalVenta += subtotal;
+
+      await VentaDetalle.create({
+        ventaid: nuevaVenta.ventaid,
+        productoNombre,
+        cantidad,
+        precioUnitario: producto.precioVenta,
+        subtotal,
+        categoriaid: producto.categoriaid
+      }, { transaction: t });
+
+      await producto.update({
+        cantidadDisponible: producto.cantidadDisponible - cantidad
+      }, { transaction: t });
+    }
+
+    await nuevaVenta.update({ total: totalVenta }, { transaction: t });
+    await t.commit();
+
+    const ventaCompleta = await Venta.findByPk(nuevaVenta.ventaid, {
+      include: [
+        { model: VentaDetalle, as: 'detalles' }, 
+        { model: require('../models/clientModel'), as: 'cliente', attributes: ['nombreCliente'] }
+      ]
     });
 
-    // 🧮 Actualizar stock del producto
-    await producto.update({ cantidadDisponible: producto.cantidadDisponible - cantidad });
-
-    res.status(201).json(nuevaVenta);
+    res.status(201).json(ventaCompleta);
   } catch (error) {
+    await t.rollback();
     res.status(500).json({ mensaje: 'Error al registrar la venta', error: error.message });
   }
 };
 
 // ========================================================
-// 📄 Obtener todas las ventas del usuario
+// 🔍 Obtener todas las ventas del NEGOCIO
 // ========================================================
 const getVentas = async (req, res) => {
   try {
-    const usuarioid = req.usuario.usuarioId;
-
-    // 🔍 Traer ventas ordenadas por fecha descendente
+    const { negocioid } = req.usuario;
     const ventas = await Venta.findAll({
-      where: { usuarioid },
+      where: { negocioid },
+      include: [
+        { model: VentaDetalle, as: 'detalles' },
+        { model: require('../models/clientModel'), as: 'cliente', attributes: ['nombreCliente'] }
+      ],
       order: [['createdAt', 'DESC']]
     });
-
     res.json(ventas);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener las ventas', error: error.message });
@@ -60,47 +100,43 @@ const getVentas = async (req, res) => {
 };
 
 // ========================================================
-// ✏️ Actualizar una venta
+// 🔍 Obtener una venta por ID
+// ========================================================
+const getVentaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { negocioid } = req.usuario;
+
+    const venta = await Venta.findOne({
+      where: { ventaid: id, negocioid },
+      include: [
+        { model: VentaDetalle, as: 'detalles' },
+        { model: require('../models/clientModel'), as: 'cliente', attributes: ['nombreCliente'] }
+      ]
+    });
+
+    if (!venta) return res.status(404).json({ mensaje: 'Venta no encontrada' });
+    res.json(venta);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener la venta', error: error.message });
+  }
+};
+
+// ========================================================
+// ✏️ Actualizar Venta (PATCH)
 // ========================================================
 const updateVenta = async (req, res) => {
   try {
     const { id } = req.params;
-    const { cantidad, descripcion } = req.body;
-    const usuarioid = req.usuario.usuarioId;
+    const { negocioid } = req.usuario;
+    const { descripcion, clienteid } = req.body;
 
-    // 🔍 Buscar la venta por ID y usuario
-    const venta = await Venta.findOne({ where: { ventaid: id, usuarioid } });
-    if (!venta) {
-      return res.status(404).json({ mensaje: 'Venta no encontrada' });
-    }
+    const venta = await Venta.findOne({ where: { ventaid: id, negocioid } });
+    if (!venta) return res.status(404).json({ mensaje: 'Venta no encontrada' });
 
-    // 🔍 Buscar el producto relacionado
-    const producto = await Producto.findOne({ where: { nombre: venta.productoNombre, usuarioid } });
-    if (!producto) {
-      return res.status(404).json({ mensaje: 'Producto no encontrado' });
-    }
-
-    // 🧮 Calcular la diferencia en cantidad
-    const diferenciaCantidad = cantidad - venta.cantidad;
-
-    // 🛡️ Validar stock suficiente si se aumenta la cantidad
-    if (producto.cantidadDisponible < diferenciaCantidad) {
-      return res.status(400).json({ mensaje: 'Stock insuficiente para actualizar la venta' });
-    }
-
-    // 💰 Recalcular el total de la venta
-    const nuevoTotal = cantidad * producto.precioVenta;
-
-    // ✏️ Actualizar la venta
     await venta.update({
-      cantidad,
-      total: nuevoTotal,
-      descripcion
-    });
-
-    // 🔄 Actualizar el stock del producto
-    await producto.update({
-      cantidadDisponible: producto.cantidadDisponible - diferenciaCantidad
+      descripcion: descripcion !== undefined ? descripcion : venta.descripcion,
+      clienteid: clienteid !== undefined ? clienteid : venta.clienteid
     });
 
     res.json(venta);
@@ -110,40 +146,50 @@ const updateVenta = async (req, res) => {
 };
 
 // ========================================================
-// 🗑️ Eliminar una venta
+// 🗑️ Eliminar Venta (Revierte Stock)
 // ========================================================
 const deleteVenta = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const usuarioid = req.usuario.usuarioId;
+    const { negocioid } = req.usuario;
 
-    // 🔍 Buscar la venta
-    const venta = await Venta.findOne({ where: { ventaid: id, usuarioid } });
-    if (!venta) return res.status(404).json({ mensaje: 'Venta no encontrada' });
+    const venta = await Venta.findOne({
+      where: { ventaid: id, negocioid },
+      include: [{ model: VentaDetalle, as: 'detalles' }],
+      transaction: t
+    });
 
-    // 🔄 Devolver el stock al producto
-    const producto = await Producto.findOne({ where: { nombre: venta.productoNombre, usuarioid } });
-    if (producto) {
-      await producto.update({
-        cantidadDisponible: producto.cantidadDisponible + venta.cantidad
-      });
+    if (!venta) {
+      await t.rollback();
+      return res.status(404).json({ mensaje: 'Venta no encontrada' });
     }
 
-    // 🧹 Eliminar la venta
-    await venta.destroy();
+    for (const detalle of venta.detalles) {
+      const producto = await Producto.findOne({
+        where: { nombre: detalle.productoNombre, negocioid },
+        transaction: t
+      });
+      if (producto) {
+        await producto.update({
+          cantidadDisponible: producto.cantidadDisponible + detalle.cantidad
+        }, { transaction: t });
+      }
+    }
 
-    res.json({ mensaje: 'Venta eliminada correctamente' });
+    await venta.destroy({ transaction: t });
+    await t.commit();
+    res.json({ mensaje: 'Venta eliminada y stock revertido' });
   } catch (error) {
+    await t.rollback();
     res.status(500).json({ mensaje: 'Error al eliminar la venta', error: error.message });
   }
 };
 
-// ========================================================
-// 📤 Exportar controladores
-// ========================================================
 module.exports = {
   createVenta,
   getVentas,
+  getVentaById,
   updateVenta,
   deleteVenta
 };
