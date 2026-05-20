@@ -32,7 +32,7 @@ const createClient = async (req, res) => {
     res.status(201).json({ mensaje: 'Cliente registrado exitosamente.', cliente: nuevoCliente });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al registrar al cliente.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al registrar al cliente.' });
   }
 };
 
@@ -51,7 +51,7 @@ const getClientes = async (req, res) => {
     res.status(200).json(clientes);
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener los clientes', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener los clientes' });
   }
 };
 
@@ -82,7 +82,7 @@ const updateCliente = async (req, res) => {
     res.status(200).json({ mensaje: 'Cliente actualizado exitosamente', cliente });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al actualizar el cliente', error: error.message });
+    res.status(500).json({ mensaje: 'Error al actualizar el cliente' });
   }
 };
 
@@ -105,7 +105,7 @@ const deleteCliente = async (req, res) => {
     res.status(200).json({ mensaje: 'Cliente eliminado correctamente' });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al eliminar el cliente.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al eliminar el cliente.' });
   }
 };
 

@@ -48,7 +48,7 @@ const createProveedor = async (req, res) => {
     res.status(201).json({ mensaje: 'Proveedor registrado exitosamente.', proveedor: nuevoProveedor });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al registrar al proveedor.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al registrar al proveedor.' });
   }
 };
 
@@ -66,7 +66,7 @@ const getProveedores = async (req, res) => {
 
     res.status(200).json(proveedores);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener los proveedores', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener los proveedores' });
   }
 };
 
@@ -116,7 +116,7 @@ const updateProveedor = async (req, res) => {
     res.status(200).json({ mensaje: 'Proveedor actualizado exitosamente.', proveedor });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al actualizar el proveedor', error: error.message });
+    res.status(500).json({ mensaje: 'Error al actualizar el proveedor' });
   }
 };
 
@@ -138,7 +138,7 @@ const deleteProveedor = async (req, res) => {
 
     res.status(200).json({ mensaje: 'Proveedor eliminado correctamente.' });
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al eliminar el proveedor.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al eliminar el proveedor.' });
   }
 };
 

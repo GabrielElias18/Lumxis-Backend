@@ -2,6 +2,7 @@ const Venta = require('../models/ventaModel');
 const VentaDetalle = require('../models/ventaDetalleModel');
 const Producto = require('../models/productModel');
 const sequelize = require('../config/database');
+const { Op } = require('sequelize');
 
 // ========================================================
 // ➕ Crear Venta (Soporta uno o muchos productos)
@@ -75,7 +76,7 @@ const createVenta = async (req, res) => {
     res.status(201).json(ventaCompleta);
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ mensaje: 'Error al registrar la venta', error: error.message });
+    res.status(500).json({ mensaje: 'Error al registrar la venta' });
   }
 };
 
@@ -85,8 +86,20 @@ const createVenta = async (req, res) => {
 const getVentas = async (req, res) => {
   try {
     const { negocioid } = req.usuario;
+    const { from, to } = req.query;
+
+    const where = { negocioid };
+    if (from && to) {
+      where.createdAt = {
+        [Op.between]: [
+          new Date(from + 'T00:00:00.000Z'),
+          new Date(to + 'T23:59:59.999Z')
+        ]
+      };
+    }
+
     const ventas = await Venta.findAll({
-      where: { negocioid },
+      where,
       include: [
         { model: VentaDetalle, as: 'detalles' },
         { model: require('../models/clientModel'), as: 'cliente', attributes: ['nombreCliente'] }
@@ -95,7 +108,7 @@ const getVentas = async (req, res) => {
     });
     res.json(ventas);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener las ventas', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener las ventas' });
   }
 };
 
@@ -118,7 +131,7 @@ const getVentaById = async (req, res) => {
     if (!venta) return res.status(404).json({ mensaje: 'Venta no encontrada' });
     res.json(venta);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener la venta', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener la venta' });
   }
 };
 
@@ -141,7 +154,7 @@ const updateVenta = async (req, res) => {
 
     res.json(venta);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al actualizar la venta', error: error.message });
+    res.status(500).json({ mensaje: 'Error al actualizar la venta' });
   }
 };
 
@@ -182,7 +195,7 @@ const deleteVenta = async (req, res) => {
     res.json({ mensaje: 'Venta eliminada y stock revertido' });
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ mensaje: 'Error al eliminar la venta', error: error.message });
+    res.status(500).json({ mensaje: 'Error al eliminar la venta' });
   }
 };
 

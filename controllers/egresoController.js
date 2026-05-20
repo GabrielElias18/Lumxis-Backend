@@ -2,6 +2,7 @@ const Egreso = require('../models/egresoModel');
 const EgresoDetalle = require('../models/egresoDetalleModel');
 const Producto = require('../models/productModel');
 const sequelize = require('../config/database');
+const { Op } = require('sequelize');
 
 // ========================================================
 // ➕ Crear Egreso (Soporta uno o muchos productos)
@@ -71,7 +72,7 @@ const createEgreso = async (req, res) => {
     res.status(201).json(egresoCompleto);
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ mensaje: 'Error al registrar el egreso', error: error.message });
+    res.status(500).json({ mensaje: 'Error al registrar el egreso' });
   }
 };
 
@@ -81,8 +82,20 @@ const createEgreso = async (req, res) => {
 const getEgresos = async (req, res) => {
   try {
     const { negocioid } = req.usuario;
+    const { from, to } = req.query;
+
+    const where = { negocioid };
+    if (from && to) {
+      where.createdAt = {
+        [Op.between]: [
+          new Date(from + 'T00:00:00.000Z'),
+          new Date(to + 'T23:59:59.999Z')
+        ]
+      };
+    }
+
     const egresos = await Egreso.findAll({
-      where: { negocioid },
+      where,
       include: [
         { model: EgresoDetalle, as: 'detalles' },
         { model: require('../models/proveedorModel'), as: 'proveedor', attributes: ['nombreProveedor'] }
@@ -91,7 +104,7 @@ const getEgresos = async (req, res) => {
     });
     res.json(egresos);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener los egresos', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener los egresos' });
   }
 };
 
@@ -114,7 +127,7 @@ const getEgresoById = async (req, res) => {
     if (!egreso) return res.status(404).json({ mensaje: 'Egreso no encontrada' });
     res.json(egreso);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener el egreso', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener el egreso' });
   }
 };
 
@@ -137,7 +150,7 @@ const updateEgreso = async (req, res) => {
 
     res.json(egreso);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al actualizar el egreso', error: error.message });
+    res.status(500).json({ mensaje: 'Error al actualizar el egreso' });
   }
 };
 
@@ -178,7 +191,7 @@ const deleteEgreso = async (req, res) => {
     res.json({ mensaje: 'Egreso eliminado y stock revertido' });
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ mensaje: 'Error al eliminar el egreso', error: error.message });
+    res.status(500).json({ mensaje: 'Error al eliminar el egreso' });
   }
 };
 

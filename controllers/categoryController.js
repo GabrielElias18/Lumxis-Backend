@@ -33,7 +33,7 @@ const createCategory = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error al crear categoría:', error);
-    res.status(500).json({ mensaje: 'Error al crear la categoría.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al crear la categoría.' });
   }
 };
 
@@ -65,7 +65,7 @@ const getCategoriesByUser = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error al obtener categorías:', error);
-    res.status(500).json({ mensaje: 'Error al obtener las categorías.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener las categorías.' });
   }
 };
 
@@ -94,7 +94,7 @@ const updateCategory = async (req, res) => {
     res.status(200).json({ mensaje: 'Categoría actualizada exitosamente.', categoria });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al actualizar la categoría.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al actualizar la categoría.' });
   }
 };
 
@@ -117,7 +117,7 @@ const deleteCategory = async (req, res) => {
     res.status(200).json({ mensaje: 'Categoría eliminada exitosamente.' });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al eliminar la categoría.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al eliminar la categoría.' });
   }
 };
 

@@ -8,7 +8,7 @@ const getNegocio = async (req, res) => {
     res.status(200).json({ negocio });
   } catch (error) {
     console.error('Error al obtener negocio:', error);
-    res.status(500).json({ mensaje: 'Error al obtener el negocio.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener el negocio.' });
   }
 };
 
@@ -30,7 +30,7 @@ const updateNegocio = async (req, res) => {
     res.status(200).json({ mensaje: 'Negocio actualizado exitosamente.', negocio });
   } catch (error) {
     console.error('Error al actualizar negocio:', error);
-    res.status(500).json({ mensaje: 'Error al actualizar el negocio.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al actualizar el negocio.' });
   }
 };
 

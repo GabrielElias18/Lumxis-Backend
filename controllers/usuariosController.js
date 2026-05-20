@@ -13,7 +13,7 @@ const getAllUsers = async (req, res) => {
     res.status(200).json({ usuarios });
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
-    res.status(500).json({ mensaje: 'Error al obtener usuarios.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al obtener usuarios.' });
   }
 };
 
@@ -45,7 +45,7 @@ const updateUser = async (req, res) => {
     res.status(200).json({ mensaje: 'Usuario actualizado exitosamente.', usuario });
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
-    res.status(500).json({ mensaje: 'Error al actualizar el usuario.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al actualizar el usuario.' });
   }
 };
 
@@ -68,7 +68,7 @@ const deleteUser = async (req, res) => {
     res.status(200).json({ mensaje: 'Usuario eliminado exitosamente.' });
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
-    res.status(500).json({ mensaje: 'Error al eliminar el usuario.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al eliminar el usuario.' });
   }
 };
 

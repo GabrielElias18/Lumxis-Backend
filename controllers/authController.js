@@ -80,7 +80,7 @@ const registerUser = async (req, res) => {
   } catch (error) {
     await t.rollback();
     console.error('❌ Error al registrar:', error);
-    res.status(500).json({ mensaje: 'Error al registrar el negocio.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al registrar el negocio.' });
   }
 };
 
@@ -131,7 +131,7 @@ const loginUser = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error al iniciar sesión:', error);
-    res.status(500).json({ mensaje: 'Error al iniciar sesión.', error: error.message });
+    res.status(500).json({ mensaje: 'Error al iniciar sesión.' });
   }
 };
 

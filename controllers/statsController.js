@@ -122,7 +122,7 @@ const getDashboardStats = async (req, res) => {
 
   } catch (error) {
     console.error('Error en estadísticas:', error);
-    res.status(500).json({ mensaje: 'Error al generar estadísticas', error: error.message });
+    res.status(500).json({ mensaje: 'Error al generar estadísticas' });
   }
 };
 
