@@ -3,26 +3,22 @@ const {
   createVenta,
   getVentas,
   getVentaById,
+  getVentaDetalle,
   updateVenta,
-  deleteVenta
+  deleteVenta,
 } = require('../controllers/ventaController');
 const { verificarToken } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Registrar venta (soporta uno o muchos items)
 router.post('/', verificarToken, createVenta);
-
-// Obtener todas las ventas
 router.get('/', verificarToken, getVentas);
 
-// Obtener una venta por ID
+// DEBE IR ANTES de /:id para que Express no confunda "detalle" con un id numérico
+router.get('/:id/detalle', verificarToken, getVentaDetalle);
+
 router.get('/:id', verificarToken, getVentaById);
-
-// Actualizar venta (PATCH)
 router.patch('/:id', verificarToken, updateVenta);
-
-// Eliminar venta
 router.delete('/:id', verificarToken, deleteVenta);
 
 module.exports = router;

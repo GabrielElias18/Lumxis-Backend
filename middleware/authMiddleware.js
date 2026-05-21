@@ -34,7 +34,15 @@ const verificarToken = (req, res, next) => {
 };
 
 
+const verificarAdmin = (req, res, next) => {
+  if (!req.usuario || req.usuario.rol !== 'administrador') {
+    return res.status(403).json({ mensaje: 'Acceso denegado. Solo administradores.' });
+  }
+  next();
+};
+
 // Exportamos los middlewares para usarlos en rutas protegidas
 module.exports = {
-  verificarToken
+  verificarToken,
+  verificarAdmin,
 };

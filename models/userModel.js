@@ -55,7 +55,15 @@ const Usuario = sequelize.define('Usuario', {
       model: 'negocios',
       key: 'negocioid'
     }
-  }
+  },
+  rolid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'roles',
+      key: 'rolid'
+    }
+  },
 }, {
   tableName: 'usuarios',
   timestamps: false,
@@ -64,5 +72,8 @@ const Usuario = sequelize.define('Usuario', {
 
 const Negocio = require('./negocioModel');
 Usuario.belongsTo(Negocio, { foreignKey: 'negocioid', as: 'negocio' });
+
+const Rol = require('./rolModel');
+Usuario.belongsTo(Rol, { foreignKey: 'rolid', as: 'rolCustom' });
 
 module.exports = Usuario;

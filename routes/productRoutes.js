@@ -8,7 +8,8 @@ const {
   getAllProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  buscarProductos,
 } = require('../controllers/productController');
 
 const { verificarToken } = require('../middleware/authMiddleware');
@@ -25,6 +26,9 @@ router.post('/', verificarToken, upload.array('imagenes', 5), createProduct); //
 
 // 📄 Obtener todos los productos
 router.get('/', verificarToken, getAllProducts);
+
+// 🔍 Buscar por nombre o código de barras (DEBE IR ANTES de /:id)
+router.get('/buscar', verificarToken, buscarProductos);
 
 // 🔍 Obtener un producto específico por su ID
 router.get('/:id', verificarToken, getProductById);

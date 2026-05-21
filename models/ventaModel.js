@@ -42,6 +42,21 @@ const Venta = sequelize.define('Venta', {
       key: 'clienteid'
     }
   },
+  descuentoTotal: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  },
+  descuentoTipoTotal: {
+    type: DataTypes.ENUM('porcentaje', 'fijo'),
+    allowNull: false,
+    defaultValue: 'fijo',
+  },
+  turnoid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'turnos_caja', key: 'turnoid' },
+  },
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
@@ -59,5 +74,10 @@ Venta.belongsTo(require('./clientModel'), { foreignKey: 'clienteid', as: 'client
 const VentaDetalle = require('./ventaDetalleModel');
 Venta.hasMany(VentaDetalle, { foreignKey: 'ventaid', as: 'detalles' });
 VentaDetalle.belongsTo(Venta, { foreignKey: 'ventaid', as: 'venta' });
+
+// Relación con VentaPago
+const VentaPago = require('./ventaPagoModel');
+Venta.hasMany(VentaPago, { foreignKey: 'ventaid', as: 'pagos' });
+VentaPago.belongsTo(Venta, { foreignKey: 'ventaid', as: 'venta' });
 
 module.exports = Venta;

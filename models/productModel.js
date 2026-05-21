@@ -63,7 +63,17 @@ const Producto = sequelize.define('Producto', {
   createdat: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
-  }
+  },
+  codigoBarras: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    unique: true,
+  },
+  tasaIva: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
 }, {
   timestamps: false,
   tableName: 'productos',

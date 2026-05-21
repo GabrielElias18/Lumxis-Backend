@@ -2,11 +2,18 @@
 // 🔐 CONTROLADOR DE AUTENTICACIÓN (Registro y Login)
 // ======================================================
 
-const Usuario = require('../models/userModel');       
-const Negocio = require('../models/negocioModel');     
-const { generarToken } = require('../utils/jwt');     
-const bcrypt = require('bcrypt');                     
+const Usuario = require('../models/userModel');
+const Negocio = require('../models/negocioModel');
+const Rol = require('../models/rolModel');
+const RolSeccion = require('../models/roleSeccionModel');
+const { generarToken } = require('../utils/jwt');
+const bcrypt = require('bcrypt');
 const sequelize = require('../config/database');
+
+const TODAS_LAS_SECCIONES = [
+  'inicio', 'inventario', 'productos', 'categorias',
+  'caja', 'balance', 'estadisticas', 'clientes', 'proveedores', 'asistente',
+];
 
 // ===============================================
 // ➕ REGISTRAR NEGOCIO Y ADMINISTRADOR (SaaS Flow)
@@ -109,11 +116,19 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ mensaje: 'Credenciales inválidas.' });
     }
 
+    let secciones = TODAS_LAS_SECCIONES;
+    if (usuario.rol === 'vendedor' && usuario.rolid) {
+      const permisos = await RolSeccion.findAll({ where: { rolid: usuario.rolid } });
+      secciones = permisos.map((p) => p.seccion);
+    } else if (usuario.rol === 'vendedor') {
+      secciones = ['caja'];
+    }
+
     const token = generarToken({
       usuarioid: usuario.usuarioid,
       negocioid: usuario.negocioid,
       rol: usuario.rol,
-      correo: usuario.correo
+      correo: usuario.correo,
     });
 
     res.status(200).json({
@@ -125,8 +140,10 @@ const loginUser = async (req, res) => {
         correo: usuario.correo,
         rol: usuario.rol,
         negocioId: usuario.negocioid,
-        nombreNegocio: usuario.negocio?.nombre
-      }
+        nombreNegocio: usuario.negocio?.nombre,
+        rolid: usuario.rolid || null,
+        secciones,
+      },
     });
 
   } catch (error) {

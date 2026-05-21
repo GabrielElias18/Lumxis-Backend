@@ -20,7 +20,10 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const sequelize = require('./config/database');
 
 require('./models/negocioModel');
+require('./models/roleSeccionModel');
+require('./models/rolModel');
 require('./models/userModel');
+require('./models/turnoCajaModel');
 require('./models/categoryModel');
 require('./models/productModel');
 require('./models/ventaModel');
@@ -28,6 +31,7 @@ require('./models/ventaDetalleModel');
 require('./models/egresoModel');
 require('./models/egresoDetalleModel');
 require('./models/clientModel');
+require('./models/ventaPagoModel');
 require('./models/proveedorModel');
 
 // Rutas
@@ -43,6 +47,7 @@ const negocioRoutes = require('./routes/negocioRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const balanceRoutes = require('./routes/balanceRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const rolesRoutes = require('./routes/rolesRoutes');
 
 const app = express();
 
@@ -77,6 +82,8 @@ app.use('/api/balance', balanceRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/negocio', negocioRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/roles', rolesRoutes);
+app.use('/api/turnos', require('./routes/turnoCajaRoutes'));
 
 const PORT = process.env.PORT || 3000;
 

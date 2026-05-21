@@ -1,6 +1,7 @@
 const Producto = require('../models/productModel');
 const Categoria = require('../models/categoryModel');
 const { processAndUploadImage } = require('../utils/cloudinary');
+const { Op } = require('sequelize');
 
 // ========================================================
 // ➕ Crear un nuevo producto con imágenes
@@ -13,7 +14,8 @@ const createProduct = async (req, res) => {
       cantidadDisponible,
       precioCompra,
       precioVenta,
-      categoriaNombre
+      categoriaNombre,
+      tasaIva = 0,
     } = req.body;
 
     const { usuarioid, negocioid } = req.usuario;
@@ -49,7 +51,8 @@ const createProduct = async (req, res) => {
       categoriaNombre,
       categoriaid: categoria.categoriaid,
       usuarioid,
-      negocioid
+      negocioid,
+      tasaIva: Number(tasaIva) || 0,
     });
 
     res.status(201).json({ mensaje: 'Producto creado exitosamente.', producto: nuevoProducto });
@@ -118,7 +121,9 @@ const updateProduct = async (req, res) => {
       precioCompra,
       precioVenta,
       categoriaid,
-      categoriaNombre
+      categoriaNombre,
+      codigoBarras,
+      tasaIva,
     } = req.body;
 
     const producto = await Producto.findOne({
@@ -144,6 +149,8 @@ const updateProduct = async (req, res) => {
       precioVenta: precioVenta !== undefined ? precioVenta : producto.precioVenta,
       categoriaid: categoriaid || producto.categoriaid,
       categoriaNombre: categoriaNombre || producto.categoriaNombre,
+      codigoBarras: codigoBarras !== undefined ? codigoBarras : producto.codigoBarras,
+      tasaIva: tasaIva !== undefined ? Number(tasaIva) : producto.tasaIva,
       imagenes: nuevasImagenes
     });
 
@@ -175,10 +182,39 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const buscarProductos = async (req, res) => {
+  try {
+    const { q, codigo } = req.query;
+    const { negocioid } = req.usuario;
+
+    if (!q && !codigo) {
+      return res.status(400).json({ mensaje: 'Se requiere el parámetro q o codigo' });
+    }
+
+    const where = { negocioid };
+    if (codigo) {
+      where.codigoBarras = codigo;
+    } else {
+      where.nombre = { [Op.iLike]: `%${q}%` };
+    }
+
+    const productos = await Producto.findAll({
+      where,
+      attributes: ['productoid', 'nombre', 'precioVenta', 'cantidadDisponible', 'codigoBarras', 'categoriaNombre', 'tasaIva'],
+      limit: 20,
+    });
+
+    res.json(productos);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al buscar productos' });
+  }
+};
+
 module.exports = {
   createProduct,
   getAllProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  buscarProductos,
 };

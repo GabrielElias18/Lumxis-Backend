@@ -35,7 +35,27 @@ const VentaDetalle = sequelize.define('VentaDetalle', {
   categoriaid: {
     type: DataTypes.INTEGER,
     allowNull: true
-  }
+  },
+  descuento: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  },
+  descuentoTipo: {
+    type: DataTypes.ENUM('porcentaje', 'fijo'),
+    allowNull: false,
+    defaultValue: 'fijo',
+  },
+  tasaIva: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
+  montoIva: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  },
 }, {
   tableName: 'venta_detalles',
   timestamps: false
