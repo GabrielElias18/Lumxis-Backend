@@ -22,25 +22,25 @@ const router = express.Router(); // Creamos instancia del enrutador
 // ===============================================
 // Ruta: POST /api/categorias
 // Protegida con token
-router.post('/categorias', verificarToken, createCategory);
+router.post('/', verificarToken, createCategory);
 
 // ===============================================
 // 📄 Obtener todas las categorías del usuario autenticado
 // ===============================================
 // Ruta: GET /api/categorias
-router.get('/categorias', verificarToken, getCategoriesByUser);
+router.get('/', verificarToken, getCategoriesByUser);
 
 // ===============================================
 // ✏️ Editar categoría por ID
 // ===============================================
 // Ruta: PUT /api/categorias/:id
-router.put('/categorias/:id', verificarToken, updateCategory);
+router.put('/:id', verificarToken, updateCategory);
 
 // ===============================================
 // 🗑️ Eliminar categoría por ID
 // ===============================================
 // Ruta: DELETE /api/categorias/:id
-router.delete('/categorias/:id', verificarToken, deleteCategory);
+router.delete('/:id', verificarToken, deleteCategory);
 
 // Exportamos el enrutador para ser usado en index.js
 module.exports = router;

@@ -71,7 +71,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.json({ limit: '10mb' }));
 
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/', categoryRoutes);
+app.use('/api/categorias', categoryRoutes);
 app.use('/api/productos', productRoutes);
 app.use('/api/ventas', ingresoRoutes);
 app.use('/api/egresos', egresoRoutes);

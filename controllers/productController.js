@@ -141,6 +141,10 @@ const updateProduct = async (req, res) => {
       nuevasImagenes = results.map(result => result.secure_url);
     }
 
+    const codigoBarrasNormalizado = codigoBarras !== undefined
+      ? (codigoBarras.trim() === '' ? null : codigoBarras.trim())
+      : producto.codigoBarras;
+
     await producto.update({
       nombre: nombre || producto.nombre,
       descripcion: descripcion || producto.descripcion,
@@ -149,7 +153,7 @@ const updateProduct = async (req, res) => {
       precioVenta: precioVenta !== undefined ? precioVenta : producto.precioVenta,
       categoriaid: categoriaid || producto.categoriaid,
       categoriaNombre: categoriaNombre || producto.categoriaNombre,
-      codigoBarras: codigoBarras !== undefined ? codigoBarras : producto.codigoBarras,
+      codigoBarras: codigoBarrasNormalizado,
       tasaIva: tasaIva !== undefined ? Number(tasaIva) : producto.tasaIva,
       imagenes: nuevasImagenes
     });
